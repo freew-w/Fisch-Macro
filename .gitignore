@@ -1,0 +1,10 @@
+.vscode
+build
+
+**/*.a
+
+include/imgui/*
+include/opencv2/*
+
+lib/imgui/*.cpp
+lib/opencv/*.cpp

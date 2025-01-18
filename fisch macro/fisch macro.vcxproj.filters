@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="src\imgui\imconfig.h" />
+    <ClInclude Include="src\imgui\imgui.h" />
+    <ClInclude Include="src\imgui\imgui_impl_dx9.h" />
+    <ClInclude Include="src\imgui\imgui_impl_win32.h" />
+    <ClInclude Include="src\imgui\imgui_internal.h" />
+    <ClInclude Include="src\imgui\imstb_rectpack.h" />
+    <ClInclude Include="src\imgui\imstb_textedit.h" />
+    <ClInclude Include="src\imgui\imstb_truetype.h" />
+    <ClInclude Include="src\fisch.hpp" />
+    <ClInclude Include="src\gui.hpp" />
+    <ClInclude Include="src\pch.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\imgui\imgui.cpp" />
+    <ClCompile Include="src\imgui\imgui_demo.cpp" />
+    <ClCompile Include="src\imgui\imgui_draw.cpp" />
+    <ClCompile Include="src\imgui\imgui_impl_dx9.cpp" />
+    <ClCompile Include="src\imgui\imgui_impl_win32.cpp" />
+    <ClCompile Include="src\imgui\imgui_tables.cpp" />
+    <ClCompile Include="src\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="src\fisch.cpp" />
+    <ClCompile Include="src\gui.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\pch.cpp" />
+  </ItemGroup>
+</Project>

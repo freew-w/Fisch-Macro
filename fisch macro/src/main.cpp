@@ -1,34 +1,32 @@
-#include "pch.hpp"
-#include "fisch.hpp"
-#include "gui.hpp"
+#include "pch.h"
+#include "fisch.h"
+#include "config.h"
+#include "gui.h"
 
 int main()
 {
 	std::thread renderingThread([]()
 		{
-			if (!gui::init()) fisch::error(_T("Failed to initialize GUI"));
-			gui::startRendering();
-			gui::cleanup();
+			gui.startRendering();
 		});
 
-	if (!fisch::init()) fisch::error(_T("Failed to initialize macro"));
+	SetForegroundWindow(fisch.robloxHWnd);
 
-	while (fisch::isRunning)
+	while (fisch.isRunning)
 	{
-		cv::Mat screenshot = fisch::screenshot();
-		cv::Rect shakeButtonRect = fisch::findShakeButton(screenshot);
-
-		if (shakeButtonRect.width > 0)
+		if (fisch.enabled)
 		{
-			cv::rectangle(screenshot, shakeButtonRect, cv::Scalar(0, 0, 255), 2);
-			fisch::clickShakeButton(shakeButtonRect);
-			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			cv::Rect shakeButtonRect = fisch.findShakeButton(fisch.screenshot(config.config.searchShakeRect));
+			if (shakeButtonRect.width > 0)
+			{
+				fisch.clickShakeButton(shakeButtonRect);
+				std::this_thread::sleep_for(std::chrono::milliseconds(config.config.clickShakeDelay));
+			}
 		}
 
-		cv::imshow("screenshot", screenshot);
-		if (cv::waitKey(1) == 27) fisch::isRunning = false;
+		if (cv::waitKey(1) == 27) fisch.isRunning = false;
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
 
 	renderingThread.join();

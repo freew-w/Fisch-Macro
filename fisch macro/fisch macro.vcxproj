@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{627b8a3f-1581-4d16-824b-b4117f1874a3}</ProjectGuid>
+    <ProjectGuid>{f3924bd8-68a7-4407-a94c-02008d3e7777}</ProjectGuid>
     <RootNamespace>fischmacro</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
@@ -72,13 +72,15 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IncludePath>C:\everything\codes\tools\vcpkg\installed\x64-windows-static\include\opencv4;C:\everything\codes\tools\vcpkg\installed\x64-windows-static\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\everything\codes\tools\vcpkg\installed\x64-windows-static\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IncludePath>C:\everything\codes\tools\vcpkg\installed\x64-windows-static\include\opencv4;C:\everything\codes\tools\vcpkg\installed\x64-windows-static\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\everything\codes\tools\vcpkg\installed\x64-windows-static\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>C:\everything\codes\tools\vcpkg\installed\x64-windows-static\include\opencv4;C:\everything\codes\tools\vcpkg\installed\x64-windows-static\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\everything\codes\tools\vcpkg\installed\x64-windows-static\debug\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>C:\everything\codes\tools\vcpkg\installed\x64-windows-static\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>C:\everything\codes\tools\vcpkg\installed\x64-windows-static\include\opencv4;C:\everything\codes\tools\vcpkg\installed\x64-windows-static\include;$(IncludePath)</IncludePath>
@@ -91,12 +93,14 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d9.lib;opencv_world4100d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d9.lib;archive.lib;bz2.lib;charset.lib;flatbuffers.lib;gif.lib;iconv.lib;jpeg.lib;leptonica-1.85.0.lib;libcrypto.lib;libcurl.lib;libpng16.lib;libprotobuf-lite.lib;libprotobuf.lib;libprotoc.lib;libsharpyuv.lib;libssl.lib;libwebp.lib;libwebpdecoder.lib;libwebpdemux.lib;libwebpmux.lib;libxml2.lib;lz4.lib;lzma.lib;opencv_calib3d4.lib;opencv_core4.lib;opencv_dnn4.lib;opencv_features2d4.lib;opencv_flann4.lib;opencv_highgui4.lib;opencv_imgcodecs4.lib;opencv_imgproc4.lib;opencv_ml4.lib;opencv_objdetect4.lib;opencv_photo4.lib;opencv_stitching4.lib;opencv_video4.lib;opencv_videoio4.lib;openjp2.lib;quirc.lib;tesseract55.lib;tiff.lib;turbojpeg.lib;utf8_range.lib;utf8_validity.lib;zlib.lib;zstd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Manifest>
       <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
@@ -111,6 +115,8 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -118,7 +124,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d9.lib;flatbuffers.lib;jpeg.lib;libpng16.lib;libprotobuf-lite.lib;libprotobuf.lib;libprotoc.lib;libsharpyuv.lib;libwebp.lib;libwebpdecoder.lib;libwebpdemux.lib;libwebpmux.lib;lzma.lib;opencv_calib3d4.lib;opencv_core4.lib;opencv_dnn4.lib;opencv_features2d4.lib;opencv_flann4.lib;opencv_highgui4.lib;opencv_imgcodecs4.lib;opencv_imgproc4.lib;opencv_ml4.lib;opencv_objdetect4.lib;opencv_photo4.lib;opencv_stitching4.lib;opencv_video4.lib;opencv_videoio4.lib;quirc.lib;tiff.lib;turbojpeg.lib;utf8_range.lib;utf8_validity.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d9.lib;archive.lib;bz2.lib;charset.lib;flatbuffers.lib;gif.lib;iconv.lib;jpeg.lib;leptonica-1.85.0.lib;libcrypto.lib;libcurl.lib;libpng16.lib;libprotobuf-lite.lib;libprotobuf.lib;libprotoc.lib;libsharpyuv.lib;libssl.lib;libwebp.lib;libwebpdecoder.lib;libwebpdemux.lib;libwebpmux.lib;libxml2.lib;lz4.lib;lzma.lib;opencv_calib3d4.lib;opencv_core4.lib;opencv_dnn4.lib;opencv_features2d4.lib;opencv_flann4.lib;opencv_highgui4.lib;opencv_imgcodecs4.lib;opencv_imgproc4.lib;opencv_ml4.lib;opencv_objdetect4.lib;opencv_photo4.lib;opencv_stitching4.lib;opencv_video4.lib;opencv_videoio4.lib;openjp2.lib;quirc.lib;tesseract55.lib;tiff.lib;turbojpeg.lib;utf8_range.lib;utf8_validity.lib;zlib.lib;zstd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Manifest>
       <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
@@ -131,12 +137,14 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d9.lib;archive.lib;bz2.lib;charset.lib;flatbuffers.lib;gif.lib;iconv.lib;jpeg.lib;leptonica-1.85.0.lib;libcrypto.lib;libcurl.lib;libpng16.lib;libprotobuf-lite.lib;libprotobuf.lib;libprotoc.lib;libsharpyuv.lib;libssl.lib;libwebp.lib;libwebpdecoder.lib;libwebpdemux.lib;libwebpmux.lib;libxml2.lib;lz4.lib;lzma.lib;opencv_calib3d4.lib;opencv_core4.lib;opencv_dnn4.lib;opencv_features2d4.lib;opencv_flann4.lib;opencv_highgui4.lib;opencv_imgcodecs4.lib;opencv_imgproc4.lib;opencv_ml4.lib;opencv_objdetect4.lib;opencv_photo4.lib;opencv_stitching4.lib;opencv_video4.lib;opencv_videoio4.lib;openjp2.lib;quirc.lib;tesseract55.lib;tiff.lib;turbojpeg.lib;utf8_range.lib;utf8_validity.lib;zlib.lib;zstd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Manifest>
       <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
@@ -151,6 +159,8 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -158,15 +168,101 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d9.lib;flatbuffers.lib;jpeg.lib;libpng16.lib;libprotobuf-lite.lib;libprotobuf.lib;libprotoc.lib;libsharpyuv.lib;libwebp.lib;libwebpdecoder.lib;libwebpdemux.lib;libwebpmux.lib;lzma.lib;opencv_calib3d4.lib;opencv_core4.lib;opencv_dnn4.lib;opencv_features2d4.lib;opencv_flann4.lib;opencv_highgui4.lib;opencv_imgcodecs4.lib;opencv_imgproc4.lib;opencv_ml4.lib;opencv_objdetect4.lib;opencv_photo4.lib;opencv_stitching4.lib;opencv_video4.lib;opencv_videoio4.lib;quirc.lib;tiff.lib;turbojpeg.lib;utf8_range.lib;utf8_validity.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d9.lib;archive.lib;bz2.lib;charset.lib;flatbuffers.lib;gif.lib;iconv.lib;jpeg.lib;leptonica-1.85.0.lib;libcrypto.lib;libcurl.lib;libpng16.lib;libprotobuf-lite.lib;libprotobuf.lib;libprotoc.lib;libsharpyuv.lib;libssl.lib;libwebp.lib;libwebpdecoder.lib;libwebpdemux.lib;libwebpmux.lib;libxml2.lib;lz4.lib;lzma.lib;opencv_calib3d4.lib;opencv_core4.lib;opencv_dnn4.lib;opencv_features2d4.lib;opencv_flann4.lib;opencv_highgui4.lib;opencv_imgcodecs4.lib;opencv_imgproc4.lib;opencv_ml4.lib;opencv_objdetect4.lib;opencv_photo4.lib;opencv_stitching4.lib;opencv_video4.lib;opencv_videoio4.lib;openjp2.lib;quirc.lib;tesseract55.lib;tiff.lib;turbojpeg.lib;utf8_range.lib;utf8_validity.lib;zlib.lib;zstd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Manifest>
       <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="src\fisch.hpp" />
-    <ClInclude Include="src\gui.hpp" />
+    <ClCompile Include="src\config.cpp" />
+    <ClCompile Include="src\fisch.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="src\gui.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="src\imgui\imgui.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\imgui\imgui_demo.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\imgui\imgui_draw.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\imgui\imgui_impl_dx9.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\imgui\imgui_impl_win32.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\imgui\imgui_tables.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\imgui\imgui_widgets.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\main.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="src\pch.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\config.h" />
+    <ClInclude Include="src\fisch.h" />
+    <ClInclude Include="src\gui.h" />
     <ClInclude Include="src\imgui\imconfig.h" />
     <ClInclude Include="src\imgui\imgui.h" />
     <ClInclude Include="src\imgui\imgui_impl_dx9.h" />
@@ -175,20 +271,7 @@
     <ClInclude Include="src\imgui\imstb_rectpack.h" />
     <ClInclude Include="src\imgui\imstb_textedit.h" />
     <ClInclude Include="src\imgui\imstb_truetype.h" />
-    <ClInclude Include="src\pch.hpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="src\fisch.cpp" />
-    <ClCompile Include="src\gui.cpp" />
-    <ClCompile Include="src\imgui\imgui.cpp" />
-    <ClCompile Include="src\imgui\imgui_demo.cpp" />
-    <ClCompile Include="src\imgui\imgui_draw.cpp" />
-    <ClCompile Include="src\imgui\imgui_impl_dx9.cpp" />
-    <ClCompile Include="src\imgui\imgui_impl_win32.cpp" />
-    <ClCompile Include="src\imgui\imgui_tables.cpp" />
-    <ClCompile Include="src\imgui\imgui_widgets.cpp" />
-    <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\pch.cpp" />
+    <ClInclude Include="src\pch.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -5,7 +5,7 @@ class Config
 public:
 	struct
 	{
-		int clickShakeDelay = 14;
+		int clickShakeDelay = 20;
 		ImRect searchShakeRect{};
 		ImRect searchBarRect{};
 	} config;

@@ -77,6 +77,8 @@ bool Config::save()
 	if (!file.is_open())
 		if (!std::filesystem::create_directory(std::filesystem::current_path().concat("/configs/")))
 			return false;
+		else
+			file = std::ofstream(std::filesystem::current_path().concat("/configs/config.txt").c_str(), std::ios::out);
 
 	for (const auto& comment : comments)
 		file << comment << std::endl;

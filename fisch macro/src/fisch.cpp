@@ -51,15 +51,15 @@ cv::Mat Fisch::screenshot(ImRect rect)
 
 	POINT robloxClientToScreenPoint{};
 	ClientToScreen(robloxHWnd, &robloxClientToScreenPoint);
-	int w = rect.Max.x - rect.Min.x;
-	int h = rect.Max.y - rect.Min.y;
+	int w = static_cast<int>(rect.Max.x - rect.Min.x);
+	int h = static_cast<int>(rect.Max.y - rect.Min.y);
 
 	HDC hDC = GetDC(nullptr);
 	HDC hMemDC = CreateCompatibleDC(hDC);
 	HBITMAP hBitmap = CreateCompatibleBitmap(hDC, w, h);
 
 	HGDIOBJ hOldBitmap = SelectObject(hMemDC, hBitmap);
-	StretchBlt(hMemDC, 0, 0, w, h, hDC, robloxClientToScreenPoint.x + rect.Min.x, robloxClientToScreenPoint.y + rect.Min.y, w, h, SRCCOPY);
+	StretchBlt(hMemDC, 0, 0, w, h, hDC, static_cast<int>(robloxClientToScreenPoint.x + rect.Min.x), static_cast<int>(robloxClientToScreenPoint.y + rect.Min.y), w, h, SRCCOPY);
 
 	cv::Mat mat(h, w, CV_8UC4);
 	BITMAPINFOHEADER bih = { sizeof(BITMAPINFOHEADER), w, -h, 1, 32, BI_RGB };
@@ -83,20 +83,17 @@ cv::Rect Fisch::findShakeButton(cv::Mat mat)
 	cv::Canny(mat, mat, 200, 300);
 	cv::findContours(mat, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
-	for (size_t i{}; i < contours.size(); i++)
+	for (auto& contour : contours)
 	{
-		if (cv::contourArea(contours[i]) < 7000 || cv::contourArea(contours[i]) > 12500 || contours[i].size() < 100)
-			if (i != contours.size() - 1)
-				continue;
-			else
-				break;
-		cv::approxPolyDP(contours[i], contours[i], 0.05 * cv::arcLength(contours[i], true), true);
+		if (cv::contourArea(contour) < 7000 || cv::contourArea(contour) > 12500 || contour.size() < 100)
+			continue;
+		cv::approxPolyDP(contour, contour, 0.05 * cv::arcLength(contour, true), true);
 
-		RECT robloxClientRect;
+		RECT robloxClientRect{};
 		GetClientRect(robloxHWnd, &robloxClientRect);
-		cv::Rect resultRect = cv::boundingRect(contours[i]);
-		resultRect.x += config.config.searchShakeRect.Min.x - robloxClientRect.left;
-		resultRect.y += config.config.searchShakeRect.Min.y - robloxClientRect.top;
+		cv::Rect resultRect = cv::boundingRect(contour);
+		resultRect.x += static_cast<int>(config.config.searchShakeRect.Min.x - robloxClientRect.left);
+		resultRect.y += static_cast<int>(config.config.searchShakeRect.Min.y - robloxClientRect.top);
 		return resultRect;
 	}
 

@@ -42,7 +42,7 @@ void Gui::startRendering()
 		}
 		if (shouldRender)
 		{
-			RECT robloxClientRect;
+			RECT robloxClientRect{};
 			POINT robloxClientToScreenPoint{};
 			GetClientRect(fisch.robloxHWnd, &robloxClientRect);
 			ClientToScreen(fisch.robloxHWnd, &robloxClientToScreenPoint);
@@ -102,7 +102,7 @@ Gui::Gui()
 	wc.style = CS_CLASSDC;
 	RegisterClassExW(&wc);
 
-	RECT robloxClientRect;
+	RECT robloxClientRect{};
 	POINT robloxClientToScreenPoint{};
 	GetClientRect(fisch.robloxHWnd, &robloxClientRect);
 	ClientToScreen(fisch.robloxHWnd, &robloxClientToScreenPoint);

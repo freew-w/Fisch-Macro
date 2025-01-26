@@ -19,8 +19,49 @@ void Fisch::error(LPCWSTR msg)
 	exit(EXIT_FAILURE);
 }
 
+bool Fisch::setPos(ImVec2& pos)
+{
+	ImGui::Begin("set pos", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
+	static int prevPos{};
+	static bool positioned{};
+	if (prevPos != static_cast<int>(pos.x + pos.y))
+	{
+		prevPos = static_cast<int>(pos.x + pos.y);
+		positioned = false;
+	}
+	if (!positioned)
+	{
+		positioned = true;
+		ImGui::SetWindowPos({ pos.x - ImGui::GetWindowSize().x / 2.0f, pos.y - ImGui::GetWindowSize().y / 2.0f });
+	}
+	if (ImGui::Button("Ok"))
+	{
+		ImDrawList* drawList = ImGui::GetWindowDrawList();
+		drawList->AddRectFilled(ImGui::GetWindowPos(), { ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y + ImGui::GetWindowSize().y }, IM_COL32(255, 0, 0, 255));
+		pos.x = ImGui::GetWindowPos().x + ImGui::GetWindowSize().x / 2.0f;
+		pos.y = ImGui::GetWindowPos().y + ImGui::GetWindowSize().y / 2.0f;
+		return true;
+	}
+	ImGui::End();
+
+	return false;
+}
+
 bool Fisch::setArea(ImRect& rect)
 {
+	static int prevPos{};
+	static bool positioned{};
+	if (prevPos != static_cast<int>(rect.Min.x + rect.Min.y + rect.Max.x + rect.Max.y))
+	{
+		prevPos = static_cast<int>(rect.Min.x + rect.Min.y + rect.Max.x + rect.Max.y);
+		positioned = false;
+	}
+	if (!positioned)
+	{
+		positioned = true;
+		ImGui::SetNextWindowPos({ rect.Min.x,  rect.Min.y });
+		ImGui::SetNextWindowSize({ rect.Max.x - rect.Min.x, rect.Max.y - rect.Min.y });
+	}
 	ImGui::Begin("set area", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
 	if (ImGui::Button("Ok"))
 	{
@@ -44,7 +85,7 @@ Fisch::Fisch()
 		error(L"Roblox not found");
 }
 
-cv::Mat Fisch::screenshot(ImRect rect)
+cv::Mat Fisch::screenshot(const ImRect& rect)
 {
 	if (rect.Min.x == 0 && rect.Min.y == 0 && rect.Max.x == 0 && rect.Max.y == 0)
 		return cv::Mat();
@@ -100,7 +141,72 @@ cv::Rect Fisch::findShakeButton(cv::Mat mat)
 	return cv::Rect();
 }
 
-void Fisch::clickShakeButton(cv::Rect rect)
+void Fisch::enableCameraMode(const ImVec2& pos)
+{
+	POINT robloxClientToScreenPoint{};
+	ClientToScreen(robloxHWnd, &robloxClientToScreenPoint);
+	SetCursorPos(static_cast<int>(robloxClientToScreenPoint.x + pos.x), static_cast<int>(robloxClientToScreenPoint.y + pos.y));
+	SendInput(1, &mouseMove, sizeof(INPUT));
+	SendInput(2, leftMouseClick, sizeof(INPUT));
+}
+
+void Fisch::blurCamera()
+{
+	SendInput(2, mClick, sizeof(INPUT));
+}
+
+void Fisch::lookDown()
+{
+	RECT robloxClientRect{};
+	POINT robloxClientToScreenPoint{};
+	GetClientRect(robloxHWnd, &robloxClientRect);
+	ClientToScreen(robloxHWnd, &robloxClientToScreenPoint);
+	SetCursorPos(robloxClientToScreenPoint.x + robloxClientRect.right / 2, robloxClientToScreenPoint.y + robloxClientRect.bottom / 2);
+	SendInput(1, &mouseMove, sizeof(INPUT));
+	SendInput(1, &rightMouseClick[0], sizeof(INPUT));
+	MOUSEINPUT mi{};
+	INPUT input{};
+	mi.dwFlags = MOUSEEVENTF_MOVE;
+	input.type = INPUT_MOUSE;
+	for (int i = 0; i < 50; i++) {
+		mi.dy = 700 / 50;
+		input.mi = mi;
+		SendInput(1, &input, sizeof(INPUT));
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	}
+	SendInput(1, &rightMouseClick[1], sizeof(INPUT));
+}
+
+void Fisch::zoomIn()
+{
+	RECT robloxClientRect{};
+	POINT robloxClientToScreenPoint{};
+	GetClientRect(robloxHWnd, &robloxClientRect);
+	ClientToScreen(robloxHWnd, &robloxClientToScreenPoint);
+	SetCursorPos(robloxClientToScreenPoint.x + robloxClientRect.right / 2, robloxClientToScreenPoint.y + robloxClientRect.bottom / 2);
+	for (int i = 0; i < 40; i++)
+	{
+		SendInput(1, &mouseScroll[0], sizeof(INPUT));
+		std::this_thread::sleep_for(std::chrono::milliseconds(5));
+	}
+	std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	SendInput(1, &mouseScroll[1], sizeof(INPUT));
+}
+
+void Fisch::castRod()
+{
+	RECT robloxClientRect{};
+	POINT robloxClientToScreenPoint{};
+	GetClientRect(robloxHWnd, &robloxClientRect);
+	ClientToScreen(robloxHWnd, &robloxClientToScreenPoint);
+	SetCursorPos(robloxClientToScreenPoint.x + robloxClientRect.right / 2, robloxClientToScreenPoint.y + robloxClientRect.bottom / 2);
+	SendInput(1, &mouseMove, sizeof(INPUT));
+	SendInput(1, &leftMouseClick[0], sizeof(INPUT));
+	std::this_thread::sleep_for(std::chrono::milliseconds(600));
+	SendInput(1, &leftMouseClick[1], sizeof(INPUT));
+}
+
+void Fisch::clickShakeButton(const cv::Rect& rect)
 {
 	/*static int lastPos{};
 	int pos = rect.x + rect.width / 2 + rect.y + rect.height / 2;
@@ -114,5 +220,6 @@ void Fisch::clickShakeButton(cv::Rect rect)
 	POINT robloxClientToScreenPoint{};
 	ClientToScreen(robloxHWnd, &robloxClientToScreenPoint);
 	SetCursorPos(robloxClientToScreenPoint.x + rect.x + rect.width / 2, robloxClientToScreenPoint.y + rect.y + rect.height / 2);
-	SendInput(3, mouseClick, sizeof(INPUT));
+	SendInput(1, &mouseMove, sizeof(INPUT));
+	SendInput(2, leftMouseClick, sizeof(INPUT));
 }

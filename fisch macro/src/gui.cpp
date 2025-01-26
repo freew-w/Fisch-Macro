@@ -61,6 +61,9 @@ void Gui::startRendering()
 
 			ImGui::Checkbox("Enabled", &fisch.enabled);
 
+			static bool settingCameraModePos{};
+			if (ImGui::Button("Set camera mode button position"))
+				settingCameraModePos = !settingCameraModePos;
 			static bool settingShakeButtonSearchingArea{};
 			if (ImGui::Button("Set shake button searching area"))
 				settingShakeButtonSearchingArea = !settingShakeButtonSearchingArea;
@@ -70,6 +73,8 @@ void Gui::startRendering()
 
 			ImGui::End();
 
+			if (settingCameraModePos)
+				settingCameraModePos = !fisch.setPos(config.config.cameraModePos);
 			if (settingShakeButtonSearchingArea)
 				settingShakeButtonSearchingArea = !fisch.setArea(config.config.searchShakeRect);
 			if (settingBarSearchingArea)

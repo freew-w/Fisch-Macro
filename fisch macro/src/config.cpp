@@ -43,26 +43,27 @@ bool Config::load()
 			continue;
 
 		std::string option = line.substr(0, colonPos);
-		std::string value = line.substr(colonPos + 1);
+		std::string value = line.substr(colonPos + 2);
 
-		if (option == "Click Shake Delay")
-			config.clickShakeDelay = std::stoi(value);
-		else if (option == "Search Shake Rect Min X")
-			config.searchShakeRect.Min.x = std::stoi(value);
-		else if (option == "Search Shake Rect Min Y")
-			config.searchShakeRect.Min.y = std::stoi(value);
-		else if (option == "Search Shake Rect Max X")
-			config.searchShakeRect.Max.x = std::stoi(value);
-		else if (option == "Search Shake Rect Max Y")
-			config.searchShakeRect.Max.y = std::stoi(value);
-		else if (option == "Search Bar Rect Min X")
-			config.searchBarRect.Min.x = std::stoi(value);
-		else if (option == "Search Bar Rect Min Y")
-			config.searchBarRect.Min.y = std::stoi(value);
-		else if (option == "Search Bar Rect Max X")
-			config.searchBarRect.Max.x = std::stoi(value);
-		else if (option == "Search Bar Rect Max Y")
-			config.searchBarRect.Max.y = std::stoi(value);
+		if (option == "Click Shake Delay")				config.clickShakeDelay = std::stoi(value);
+
+		if (option == "Auto Enable Camera Mode")		config.autoEnableCameraMode = value == "1" ? true : false;
+		if (option == "Auto Blur")						config.autoBlur = value == "1" ? true : false;
+		if (option == "Auto Look Down")					config.autoLookDown = value == "1" ? true : false;
+		if (option == "Auto Zoom In")					config.autoZoomIn = value == "1" ? true : false;
+
+		else if (option == "Camera Mode Pos X")			config.cameraModePos.x = std::stoi(value);
+		else if (option == "Camera Mode Pos Y")			config.cameraModePos.y = std::stoi(value);
+
+		else if (option == "Search Shake Rect Min X")	config.searchShakeRect.Min.x = std::stoi(value);
+		else if (option == "Search Shake Rect Min Y")	config.searchShakeRect.Min.y = std::stoi(value);
+		else if (option == "Search Shake Rect Max X")	config.searchShakeRect.Max.x = std::stoi(value);
+		else if (option == "Search Shake Rect Max Y")	config.searchShakeRect.Max.y = std::stoi(value);
+
+		else if (option == "Search Bar Rect Min X")		config.searchBarRect.Min.x = std::stoi(value);
+		else if (option == "Search Bar Rect Min Y")		config.searchBarRect.Min.y = std::stoi(value);
+		else if (option == "Search Bar Rect Max X")		config.searchBarRect.Max.x = std::stoi(value);
+		else if (option == "Search Bar Rect Max Y")		config.searchBarRect.Max.y = std::stoi(value);
 	}
 
 	file.close();
@@ -83,10 +84,20 @@ bool Config::save()
 	for (const auto& comment : comments)
 		file << comment << std::endl;
 	file << "Click Shake Delay: " << config.clickShakeDelay << std::endl;
+
+	file << "Auto Enable Camera Mode: " << config.autoEnableCameraMode << std::endl;
+	file << "Auto Blur: " << config.autoBlur << std::endl;
+	file << "Auto Look Down: " << config.autoLookDown << std::endl;
+	file << "Auto Zoom In: " << config.autoZoomIn << std::endl;
+
+	file << "Camera Mode Pos X: " << config.cameraModePos.x << std::endl;
+	file << "Camera Mode Pos Y: " << config.cameraModePos.y << std::endl;
+
 	file << "Search Shake Rect Min X: " << config.searchShakeRect.Min.x << std::endl;
 	file << "Search Shake Rect Min Y: " << config.searchShakeRect.Min.y << std::endl;
 	file << "Search Shake Rect Max X: " << config.searchShakeRect.Max.x << std::endl;
 	file << "Search Shake Rect Max Y: " << config.searchShakeRect.Max.y << std::endl;
+
 	file << "Search Bar Rect Min X: " << config.searchBarRect.Min.x << std::endl;
 	file << "Search Bar Rect Min Y: " << config.searchBarRect.Min.y << std::endl;
 	file << "Search Bar Rect Max X: " << config.searchBarRect.Max.x << std::endl;

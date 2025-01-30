@@ -219,7 +219,8 @@ void Fisch::clickShakeButton(const cv::Rect& rect)
 	SendInput(2, leftMouseClick, sizeof(INPUT));
 }
 
-cv::Rect Fisch::findBar(cv::Mat mat)
+// POSITION IS RELATIVE TO THE IMAGE
+cv::Rect Fisch::findBar(cv::Mat mat, bool isArrowOnLeft)
 {
 	cv::Rect rect = findArrow(mat);
 
@@ -233,25 +234,25 @@ cv::Rect Fisch::findBar(cv::Mat mat)
 	//else
 	//	return { rect.x - offset.x, rect.y - offset.y, widthHeight.x, widthHeight.y };
 
-	static int prevX = rect.x;
-	static bool isArrowOnLeft = true;
-	if (rect.x - prevX > 60)
-	{
-		isArrowOnLeft = false;
-		prevX = rect.x;
-	}
-	else if (prevX - rect.x > 60)
-	{
-		isArrowOnLeft = true;
-		prevX = rect.x;
-	}
+	//static int prevX = rect.x;
+	//static bool isArrowOnLeft = true;
+	//if (rect.x - prevX > 60)
+	//{
+	//	isArrowOnLeft = false;
+	//	prevX = rect.x;
+	//}
+	//else if (prevX - rect.x > 60)
+	//{
+	//	isArrowOnLeft = true;
+	//	prevX = rect.x;
+	//}
 
-	static auto lastResetTime = std::chrono::high_resolution_clock::now();
-	auto currentTime = std::chrono::high_resolution_clock::now();
-	if (std::chrono::duration_cast<std::chrono::milliseconds>(lastResetTime - currentTime).count() >= 10) {
-		prevX = rect.x;
-		lastResetTime = currentTime;
-	}
+	//static auto lastResetTime = std::chrono::high_resolution_clock::now();
+	//auto currentTime = std::chrono::high_resolution_clock::now();
+	//if (std::chrono::duration_cast<std::chrono::milliseconds>(lastResetTime - currentTime).count() >= 10) {
+	//	prevX = rect.x;
+	//	lastResetTime = currentTime;
+	//}
 
 	if (isArrowOnLeft)
 		return { rect.x - offset.x, rect.y - offset.y, widthHeight.x, widthHeight.y };
@@ -261,6 +262,18 @@ cv::Rect Fisch::findBar(cv::Mat mat)
 
 cv::Rect Fisch::findLine(cv::Mat mat)
 {
+	cv::cvtColor(mat, mat, cv::COLOR_BGR2HSV);
+
+	cv::inRange(mat, cv::Scalar(110, 50, 80), cv::Scalar(110, 70, 100), mat);
+	cv::medianBlur(mat, mat, 3);
+	std::vector<std::vector<cv::Point>> contours{};
+	cv::findContours(mat, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+	for (auto& contour : contours)
+	{
+		cv::approxPolyDP(contour, contour, 0.02 * cv::arcLength(contour, true), true);
+		return cv::boundingRect(contour);
+	}
 
 	return cv::Rect();
 }
@@ -274,8 +287,10 @@ Fisch::Fisch()
 
 cv::Rect Fisch::findArrow(cv::Mat mat)
 {
-	cv::cvtColor(mat, mat, cv::COLOR_RGBA2RGB);
-	cv::inRange(mat, cv::Scalar(116, 114, 116), cv::Scalar(143, 144, 146), mat);
+	//cv::cvtColor(mat, mat, cv::COLOR_RGBA2RGB);
+	//cv::inRange(mat, cv::Scalar(116, 114, 116), cv::Scalar(143, 144, 146), mat);
+	cv::cvtColor(mat, mat, cv::COLOR_BGR2HSV);
+	cv::inRange(mat, cv::Scalar(0, 0, 120), cv::Scalar(180, 20, 140), mat);
 	cv::medianBlur(mat, mat, 3);
 	std::vector<std::vector<cv::Point>> contours{};
 	cv::findContours(mat, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
@@ -283,7 +298,7 @@ cv::Rect Fisch::findArrow(cv::Mat mat)
 	for (auto& contour : contours)
 	{
 		cv::approxPolyDP(contour, contour, 0.02 * cv::arcLength(contour, true), true);
-		if (contour.size() < 7 || cv::contourArea(contour) < 20)
+		if (contour.size() < 5 || cv::contourArea(contour) < 20)
 			continue;
 		return cv::boundingRect(contour);
 	}

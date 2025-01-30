@@ -14,39 +14,68 @@ int main()
 
 	while (fisch.isRunning)
 	{
+		static bool firstExec = true;
+		static int findComponentFailSafe = 0;
+
 		if (fisch.enabled)
 		{
-			static int clickShakeFailSafe{};
+
 			cv::Rect shakeButtonRect = fisch.findShakeButton(fisch.screenshot(config.config.searchShakeRect));
-			if (shakeButtonRect.width > 0)
+
+			if (!shakeButtonRect.width) // shake button not found
 			{
-				clickShakeFailSafe = 0;
-				fisch.clickShakeButton(shakeButtonRect);
-				std::this_thread::sleep_for(std::chrono::milliseconds(config.config.clickShakeDelay));
-			}
-			else
-			{
-				static auto lastIncrementTime = std::chrono::high_resolution_clock::now();
-				auto currentTime = std::chrono::high_resolution_clock::now();
-				if (std::chrono::duration_cast<std::chrono::seconds>(currentTime - lastIncrementTime).count() >= 1)
+				if (firstExec)
 				{
-					clickShakeFailSafe++;
-					lastIncrementTime = currentTime;
-				}
-				if (clickShakeFailSafe >= 3)
-				{
-					clickShakeFailSafe = 0;
+					firstExec = false;
 					if (config.config.autoEnableCameraMode)
 						fisch.enableCameraMode(config.config.cameraModePos);
-					if (config.config.autoBlur)
-						fisch.blurCamera();
 					if (config.config.autoLookDown)
 						fisch.lookDown();
 					if (config.config.autoZoomIn)
 						fisch.zoomIn();
+				}
+
+				cv::Mat findBarMat = fisch.screenshot(config.config.searchBarRect);
+				cv::Rect lineRect = fisch.findLine(findBarMat);
+				cv::Rect barRect = fisch.findBar(findBarMat);
+
+				if (barRect.width || lineRect.x) // bar found
+				{
+					findComponentFailSafe = 0;
+
+					continue;
+				}
+
+				static auto lastIncrementTime = std::chrono::high_resolution_clock::now();
+				auto currentTime = std::chrono::high_resolution_clock::now();
+				if (std::chrono::duration_cast<std::chrono::seconds>(currentTime - lastIncrementTime).count() >= 1)
+				{
+					findComponentFailSafe++;
+					lastIncrementTime = currentTime;
+				}
+				if (findComponentFailSafe >= 2) // restart
+				{
+					findComponentFailSafe = 0;
+
+					if (config.config.autoBlur)
+						fisch.blurCamera();
+					if (config.config.autoLookDown)
+						fisch.lookDown();
 					fisch.castRod();
 				}
 			}
+			else // shake button found
+			{
+				findComponentFailSafe = 0;
+
+				fisch.clickShakeButton(shakeButtonRect);
+				std::this_thread::sleep_for(std::chrono::milliseconds(config.config.clickShakeDelay));
+			}
+		}
+		else
+		{
+			firstExec = true;
+			findComponentFailSafe = 0;
 		}
 
 		if (GetAsyncKeyState(VK_F6) & 0x01) fisch.enabled = !fisch.enabled;

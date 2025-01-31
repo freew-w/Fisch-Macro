@@ -32,13 +32,13 @@ public:
 	cv::Rect findShakeButton(cv::Mat mat);
 	void clickShakeButton(const cv::Rect& rect);
 
-	cv::Rect findBar(cv::Mat mat, bool isArrowOnLeft = true);
+	//cv::Rect findBar(cv::Mat mat, bool isArrowOnLeft = true);
 	cv::Rect findLine(cv::Mat mat);
+	cv::Rect findArrow(cv::Mat mat);
+	std::tuple<cv::Point, cv::Point> getArrowToBarDistanceAndBarWidthHeight(cv::Mat mat);
 
 private:
 	Fisch();
-	cv::Rect findArrow(cv::Mat mat);
-	std::tuple<cv::Point, cv::Point> getArrowToBarDistanceAndBarWidthHeight(cv::Mat mat);
 };
 
 inline Fisch& fisch = Fisch::get();

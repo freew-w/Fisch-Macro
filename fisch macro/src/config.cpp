@@ -55,6 +55,11 @@ bool Config::load()
 		else if (option == "Camera Mode Pos X")			config.cameraModePos.x = std::stoi(value);
 		else if (option == "Camera Mode Pos Y")			config.cameraModePos.y = std::stoi(value);
 
+		else if (option == "Bar Dead Zone Left X")		config.barDeadZoneLeftPos.x = std::stoi(value);
+		else if (option == "Bar Dead Zone Left Y")		config.barDeadZoneLeftPos.y = std::stoi(value);
+		else if (option == "Bar Dead Zone Right X")		config.barDeadZoneRightPos.x = std::stoi(value);
+		else if (option == "Bar Dead Zone Right Y")		config.barDeadZoneRightPos.y = std::stoi(value);
+
 		else if (option == "Search Shake Rect Min X")	config.searchShakeRect.Min.x = std::stoi(value);
 		else if (option == "Search Shake Rect Min Y")	config.searchShakeRect.Min.y = std::stoi(value);
 		else if (option == "Search Shake Rect Max X")	config.searchShakeRect.Max.x = std::stoi(value);
@@ -92,6 +97,11 @@ bool Config::save()
 
 	file << "Camera Mode Pos X: " << config.cameraModePos.x << std::endl;
 	file << "Camera Mode Pos Y: " << config.cameraModePos.y << std::endl;
+
+	file << "Bar Dead Zone Left X: " << config.barDeadZoneLeftPos.x << std::endl;
+	file << "Bar Dead Zone Left Y: " << config.barDeadZoneLeftPos.y << std::endl;
+	file << "Bar Dead Zone Right X: " << config.barDeadZoneRightPos.x << std::endl;
+	file << "Bar Dead Zone Right Y: " << config.barDeadZoneRightPos.y << std::endl;
 
 	file << "Search Shake Rect Min X: " << config.searchShakeRect.Min.x << std::endl;
 	file << "Search Shake Rect Min Y: " << config.searchShakeRect.Min.y << std::endl;

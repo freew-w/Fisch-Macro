@@ -61,24 +61,28 @@ void Gui::startRendering()
 
 			ImGui::Checkbox("Enabled", &fisch.enabled);
 
-			static bool settingCameraModePos{};
-			if (ImGui::Button("Set camera mode button position"))
-				settingCameraModePos = !settingCameraModePos;
-			static bool settingShakeButtonSearchingArea{};
-			if (ImGui::Button("Set shake button searching area"))
-				settingShakeButtonSearchingArea = !settingShakeButtonSearchingArea;
-			static bool settingBarSearchingArea{};
-			if (ImGui::Button("Set bar searching area"))
-				settingBarSearchingArea = !settingBarSearchingArea;
+			static bool doneSettingCameraModePos = true;
+			if (ImGui::Button("Set camera mode button position"))		doneSettingCameraModePos = !doneSettingCameraModePos;
+
+			static bool doneSettingBarDeadZoneLeftPos = true;
+			if (ImGui::Button("Set bar dead zone left position"))		doneSettingBarDeadZoneLeftPos = !doneSettingBarDeadZoneLeftPos;
+
+			static bool doneSettingBarDeadZoneRightPos = true;
+			if (ImGui::Button("Set bar dead zone right position"))		doneSettingBarDeadZoneRightPos = !doneSettingBarDeadZoneRightPos;
+
+			static bool doneSettingShakeButtonSearchingArea = true;
+			if (ImGui::Button("Set shake button searching area"))		doneSettingShakeButtonSearchingArea = !doneSettingShakeButtonSearchingArea;
+
+			static bool doneSettingBarSearchingArea = true;
+			if (ImGui::Button("Set bar searching area"))				doneSettingBarSearchingArea = !doneSettingBarSearchingArea;
 
 			ImGui::End();
 
-			if (settingCameraModePos)
-				settingCameraModePos = !fisch.setPos(config.config.cameraModePos);
-			if (settingShakeButtonSearchingArea)
-				settingShakeButtonSearchingArea = !fisch.setArea(config.config.searchShakeRect);
-			if (settingBarSearchingArea)
-				settingBarSearchingArea = !fisch.setArea(config.config.searchBarRect);
+			if (!doneSettingCameraModePos)				doneSettingCameraModePos = fisch.setPos(config.config.cameraModePos);
+			if (!doneSettingBarDeadZoneLeftPos)			doneSettingBarDeadZoneLeftPos = fisch.setPos(config.config.barDeadZoneLeftPos);
+			if (!doneSettingBarDeadZoneRightPos)		doneSettingBarDeadZoneRightPos = fisch.setPos(config.config.barDeadZoneRightPos);
+			if (!doneSettingShakeButtonSearchingArea)	doneSettingShakeButtonSearchingArea = fisch.setArea(config.config.searchShakeRect);
+			if (!doneSettingBarSearchingArea)			doneSettingBarSearchingArea = fisch.setArea(config.config.searchBarRect);
 		}
 		ImGui::EndFrame();
 

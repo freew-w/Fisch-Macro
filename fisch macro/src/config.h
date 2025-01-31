@@ -11,6 +11,8 @@ public:
 		bool autoLookDown = true;
 		bool autoZoomIn = true;
 		ImVec2 cameraModePos{};
+		ImVec2 barDeadZoneLeftPos{};
+		ImVec2 barDeadZoneRightPos{};
 		ImRect searchShakeRect{};
 		ImRect searchBarRect{};
 	} config;

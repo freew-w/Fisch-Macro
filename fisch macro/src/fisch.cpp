@@ -200,10 +200,10 @@ cv::Rect Fisch::findShakeButton(cv::Mat mat)
 
 		RECT robloxClientRect{};
 		GetClientRect(robloxHWnd, &robloxClientRect);
-		cv::Rect resultRect = cv::boundingRect(contour);
-		resultRect.x += static_cast<int>(config.config.searchShakeRect.Min.x - robloxClientRect.left);
-		resultRect.y += static_cast<int>(config.config.searchShakeRect.Min.y - robloxClientRect.top);
-		return resultRect;
+		cv::Rect rect = cv::boundingRect(contour);
+		rect.x += static_cast<int>(config.config.searchShakeRect.Min.x - robloxClientRect.left);
+		rect.y += static_cast<int>(config.config.searchShakeRect.Min.y - robloxClientRect.top);
+		return rect;
 	}
 
 	return cv::Rect();
@@ -220,45 +220,45 @@ void Fisch::clickShakeButton(const cv::Rect& rect)
 }
 
 // POSITION IS RELATIVE TO THE IMAGE
-cv::Rect Fisch::findBar(cv::Mat mat, bool isArrowOnLeft)
-{
-	cv::Rect rect = findArrow(mat);
-
-	if (!rect.x)
-		return cv::Rect();
-
-	static auto [offset, widthHeight] = getArrowToBarDistanceAndBarWidthHeight(mat);
-
-	//if (GetAsyncKeyState(VK_LBUTTON) & 0x8000)
-	//	return { rect.x + rect.width + offset.x - widthHeight.x, rect.y - offset.y, widthHeight.x, widthHeight.y };
-	//else
-	//	return { rect.x - offset.x, rect.y - offset.y, widthHeight.x, widthHeight.y };
-
-	//static int prevX = rect.x;
-	//static bool isArrowOnLeft = true;
-	//if (rect.x - prevX > 60)
-	//{
-	//	isArrowOnLeft = false;
-	//	prevX = rect.x;
-	//}
-	//else if (prevX - rect.x > 60)
-	//{
-	//	isArrowOnLeft = true;
-	//	prevX = rect.x;
-	//}
-
-	//static auto lastResetTime = std::chrono::high_resolution_clock::now();
-	//auto currentTime = std::chrono::high_resolution_clock::now();
-	//if (std::chrono::duration_cast<std::chrono::milliseconds>(lastResetTime - currentTime).count() >= 10) {
-	//	prevX = rect.x;
-	//	lastResetTime = currentTime;
-	//}
-
-	if (isArrowOnLeft)
-		return { rect.x - offset.x, rect.y - offset.y, widthHeight.x, widthHeight.y };
-	else
-		return { rect.x + rect.width + offset.x - widthHeight.x, rect.y - offset.y, widthHeight.x, widthHeight.y };
-}
+//cv::Rect Fisch::findBar(cv::Mat mat, bool isArrowOnLeft)
+//{
+//	cv::Rect rect = findArrow(mat);
+//
+//	if (!rect.x)
+//		return cv::Rect();
+//
+//	static auto [offset, widthHeight] = getArrowToBarDistanceAndBarWidthHeight(mat);
+//
+//	//if (GetAsyncKeyState(VK_LBUTTON) & 0x8000)
+//	//	return { rect.x + rect.width + offset.x - widthHeight.x, rect.y - offset.y, widthHeight.x, widthHeight.y };
+//	//else
+//	//	return { rect.x - offset.x, rect.y - offset.y, widthHeight.x, widthHeight.y };
+//
+//	//static int prevX = rect.x;
+//	//static bool isArrowOnLeft = true;
+//	//if (rect.x - prevX > 60)
+//	//{
+//	//	isArrowOnLeft = false;
+//	//	prevX = rect.x;
+//	//}
+//	//else if (prevX - rect.x > 60)
+//	//{
+//	//	isArrowOnLeft = true;
+//	//	prevX = rect.x;
+//	//}
+//
+//	//static auto lastResetTime = std::chrono::high_resolution_clock::now();
+//	//auto currentTime = std::chrono::high_resolution_clock::now();
+//	//if (std::chrono::duration_cast<std::chrono::milliseconds>(lastResetTime - currentTime).count() >= 10) {
+//	//	prevX = rect.x;
+//	//	lastResetTime = currentTime;
+//	//}
+//
+//	if (isArrowOnLeft)
+//		return { rect.x - offset.x, rect.y - offset.y, widthHeight.x, widthHeight.y };
+//	else
+//		return { rect.x + rect.width + offset.x - widthHeight.x, rect.y - offset.y, widthHeight.x, widthHeight.y };
+//}
 
 cv::Rect Fisch::findLine(cv::Mat mat)
 {
@@ -272,17 +272,15 @@ cv::Rect Fisch::findLine(cv::Mat mat)
 	for (auto& contour : contours)
 	{
 		cv::approxPolyDP(contour, contour, 0.02 * cv::arcLength(contour, true), true);
-		return cv::boundingRect(contour);
+		RECT robloxClientRect{};
+		GetClientRect(robloxHWnd, &robloxClientRect);
+		cv::Rect rect = cv::boundingRect(contour);
+		rect.x += static_cast<int>(config.config.searchBarRect.Min.x - robloxClientRect.left);
+		rect.y += static_cast<int>(config.config.searchBarRect.Min.y - robloxClientRect.top);
+		return rect;
 	}
 
 	return cv::Rect();
-}
-
-Fisch::Fisch()
-{
-	robloxHWnd = FindWindowW(nullptr, L"Roblox");
-	if (!robloxHWnd)
-		error(L"Roblox not found");
 }
 
 cv::Rect Fisch::findArrow(cv::Mat mat)
@@ -300,7 +298,12 @@ cv::Rect Fisch::findArrow(cv::Mat mat)
 		cv::approxPolyDP(contour, contour, 0.02 * cv::arcLength(contour, true), true);
 		if (contour.size() < 5 || cv::contourArea(contour) < 20)
 			continue;
-		return cv::boundingRect(contour);
+		RECT robloxClientRect{};
+		GetClientRect(robloxHWnd, &robloxClientRect);
+		cv::Rect rect = cv::boundingRect(contour);
+		rect.x += static_cast<int>(config.config.searchBarRect.Min.x - robloxClientRect.left);
+		rect.y += static_cast<int>(config.config.searchBarRect.Min.y - robloxClientRect.top);
+		return rect;
 	}
 
 	return cv::Rect();
@@ -349,4 +352,11 @@ std::tuple<cv::Point, cv::Point> Fisch::getArrowToBarDistanceAndBarWidthHeight(c
 		{arrowRect.x - barRect.x, arrowRect.y - barRect.y},
 		{barRect.width , barRect.height}
 	};
+}
+
+Fisch::Fisch()
+{
+	robloxHWnd = FindWindowW(nullptr, L"Roblox");
+	if (!robloxHWnd)
+		error(L"Roblox not found");
 }

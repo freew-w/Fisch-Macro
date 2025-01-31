@@ -31,23 +31,24 @@ int main()
 		{
 			firstExec = false;
 			if (config.config.autoEnableCameraMode)
-				fisch.enableCameraMode(config.config.cameraModePos);
+				fisch.enableCameraMode(config.coordinates.cameraModePos);
 			if (config.config.autoLookDown)
 				fisch.lookDown();
 			if (config.config.autoZoomIn)
 				fisch.zoomIn();
 		}
 
-		cv::Rect shakeButtonRect = fisch.findShakeButton(fisch.screenshot(config.config.searchShakeRect));
+		cv::Rect shakeButtonRect = fisch.findShakeButton(fisch.screenshot(config.coordinates.searchShakeRect));
 		if (shakeButtonRect.width)
 		{
 			findComponentFailSafe = 0;
 			fisch.clickShakeButton(shakeButtonRect);
-			std::this_thread::sleep_for(std::chrono::milliseconds(config.config.clickShakeDelay));
+			if (!config.config.checkClickShakePosition)
+				std::this_thread::sleep_for(std::chrono::milliseconds(config.config.clickShakeDelay));
 			continue;
 		}
 
-		cv::Mat fishingMinigameMat = fisch.screenshot(config.config.searchBarRect);
+		cv::Mat fishingMinigameMat = fisch.screenshot(config.coordinates.searchBarRect);
 		cv::Rect lineRect = fisch.findLine(fishingMinigameMat);
 		cv::Rect arrowRect = fisch.findArrow(fishingMinigameMat);
 		if (lineRect.x || arrowRect.width)
@@ -68,12 +69,12 @@ int main()
 
 			int output = static_cast<int>(kp * error + kd * derivative);
 
-			if (lineRect.x < config.config.barDeadZoneLeftPos.x)
+			if (lineRect.x < config.coordinates.barDeadZoneLeftPos.x)
 			{
 				SendInput(1, &fisch.leftMouseClick[1], sizeof(INPUT));
 				continue;
 			}
-			else if (lineRect.x > config.config.barDeadZoneRightPos.x)
+			else if (lineRect.x > config.coordinates.barDeadZoneRightPos.x)
 			{
 				SendInput(1, &fisch.leftMouseClick[0], sizeof(INPUT));
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));

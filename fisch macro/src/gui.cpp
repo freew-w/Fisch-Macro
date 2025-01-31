@@ -78,11 +78,11 @@ void Gui::startRendering()
 
 			ImGui::End();
 
-			if (!doneSettingCameraModePos)				doneSettingCameraModePos = fisch.setPos(config.config.cameraModePos);
-			if (!doneSettingBarDeadZoneLeftPos)			doneSettingBarDeadZoneLeftPos = fisch.setPos(config.config.barDeadZoneLeftPos);
-			if (!doneSettingBarDeadZoneRightPos)		doneSettingBarDeadZoneRightPos = fisch.setPos(config.config.barDeadZoneRightPos);
-			if (!doneSettingShakeButtonSearchingArea)	doneSettingShakeButtonSearchingArea = fisch.setArea(config.config.searchShakeRect);
-			if (!doneSettingBarSearchingArea)			doneSettingBarSearchingArea = fisch.setArea(config.config.searchBarRect);
+			if (!doneSettingCameraModePos)				doneSettingCameraModePos = fisch.setPos(config.coordinates.cameraModePos);
+			if (!doneSettingBarDeadZoneLeftPos)			doneSettingBarDeadZoneLeftPos = fisch.setPos(config.coordinates.barDeadZoneLeftPos);
+			if (!doneSettingBarDeadZoneRightPos)		doneSettingBarDeadZoneRightPos = fisch.setPos(config.coordinates.barDeadZoneRightPos);
+			if (!doneSettingShakeButtonSearchingArea)	doneSettingShakeButtonSearchingArea = fisch.setArea(config.coordinates.searchShakeRect);
+			if (!doneSettingBarSearchingArea)			doneSettingBarSearchingArea = fisch.setArea(config.coordinates.searchBarRect);
 		}
 		ImGui::EndFrame();
 

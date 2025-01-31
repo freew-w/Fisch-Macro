@@ -402,5 +402,7 @@ FodyWeavers.xsd
 *autorecover*
 
 fisch macro/configs
+fisch macro/coordinates.txt
+fisch macro/macro.txt
 
 fisch macro/images

@@ -88,6 +88,9 @@ bool Config::saveConfig()
     file << "Auto Look Down: " << config.autoLookDown << std::endl;
     file << "Auto Zoom In: " << config.autoZoomIn << std::endl;
 
+    file << "Kp: " << config.kp << std::endl;
+    file << "Kd: " << config.kd << std::endl;
+
     file.close();
 
     return true;
@@ -117,6 +120,9 @@ bool Config::loadConfig()
         else if (option == "Auto Blur")					config.autoBlur = std::stoi(value);
         else if (option == "Auto Look Down")			config.autoLookDown = std::stoi(value);
         else if (option == "Auto Zoom In")				config.autoZoomIn = std::stoi(value);
+
+        else if (option == "Kp")			            config.kp = std::stod(value);
+        else if (option == "Kd")				        config.kd = std::stod(value);
     }
 
     file.close();

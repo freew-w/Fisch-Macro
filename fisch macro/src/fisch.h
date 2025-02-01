@@ -18,12 +18,9 @@ public:
     void warn(LPCWSTR msg);
     void error(LPCWSTR msg);
 
-    bool setPos(ImVec2& pos);
-    bool setArea(ImRect& rect);
-
     cv::Mat screenshot(const ImRect& rect);
 
-    void enableCameraMode(const ImVec2& pos);
+    void toggleCameraMode(const ImVec2& pos);
     void blurCamera();
     void lookDown();
     void zoomIn();
@@ -35,10 +32,22 @@ public:
     //cv::Rect findBar(cv::Mat mat, bool isArrowOnLeft = true);
     cv::Rect findLine(cv::Mat mat);
     cv::Rect findArrow(cv::Mat mat);
-    std::tuple<cv::Point, cv::Point> getArrowToBarDistanceAndBarWidthHeight(cv::Mat mat);
+    //std::tuple<cv::Point, cv::Point> getArrowToBarDistanceAndBarWidthHeight(cv::Mat mat);
 
 private:
     Fisch();
+};
+
+class SetPos
+{
+public:
+    SetPos(ImVec2& pos, bool shouldShow);
+};
+
+class SetArea
+{
+public:
+    SetArea(ImRect& rect, bool shouldShow);
 };
 
 inline Fisch& fisch = Fisch::get();

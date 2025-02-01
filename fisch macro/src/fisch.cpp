@@ -19,73 +19,6 @@ void Fisch::error(LPCWSTR msg)
     exit(EXIT_FAILURE);
 }
 
-bool Fisch::setPos(ImVec2& pos)
-{
-    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
-    ImGui::Begin("set pos", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
-
-    static int prevWindowPos{};
-    static bool positioned{};
-    if (prevWindowPos != static_cast<int>(pos.x + pos.y))
-    {
-        prevWindowPos = static_cast<int>(pos.x + pos.y);
-        positioned = false;
-    }
-    if (!positioned)
-    {
-        positioned = true;
-        ImGui::SetWindowPos({ pos.x - ImGui::GetWindowSize().x / 2.0f, pos.y - ImGui::GetWindowSize().y / 2.0f });
-    }
-
-    if (ImGui::Button("Ok"))
-    {
-        ImDrawList* drawList = ImGui::GetWindowDrawList();
-        drawList->AddRectFilled(ImGui::GetWindowPos(), { ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y + ImGui::GetWindowSize().y }, IM_COL32(255, 0, 0, 255));
-        pos.x = ImGui::GetWindowPos().x + ImGui::GetWindowSize().x / 2.0f;
-        pos.y = ImGui::GetWindowPos().y + ImGui::GetWindowSize().y / 2.0f;
-        return true;
-    }
-
-    ImGui::End();
-    ImGui::PopStyleVar();
-
-    return false;
-}
-
-bool Fisch::setArea(ImRect& rect)
-{
-    static int prevPos{};
-    static bool positioned{};
-    if (prevPos != static_cast<int>(rect.Min.x + rect.Min.y + rect.Max.x + rect.Max.y))
-    {
-        prevPos = static_cast<int>(rect.Min.x + rect.Min.y + rect.Max.x + rect.Max.y);
-        positioned = false;
-    }
-    if (!positioned)
-    {
-        positioned = true;
-        ImGui::SetNextWindowPos({ rect.Min.x,  rect.Min.y });
-        ImGui::SetNextWindowSize({ rect.Max.x - rect.Min.x, rect.Max.y - rect.Min.y });
-    }
-
-    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
-    ImGui::Begin("set area", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
-
-    if (ImGui::Button("Ok"))
-    {
-        rect.Min.x = ImGui::GetWindowPos().x;
-        rect.Min.y = ImGui::GetWindowPos().y;
-        rect.Max.x = ImGui::GetWindowPos().x + ImGui::GetWindowSize().x;
-        rect.Max.y = ImGui::GetWindowPos().y + ImGui::GetWindowSize().y;
-        return true;
-    }
-
-    ImGui::End();
-    ImGui::PopStyleVar();
-
-    return false;
-}
-
 cv::Mat Fisch::screenshot(const ImRect& rect)
 {
     if (rect.Min.x == 0 && rect.Min.y == 0 && rect.Max.x == 0 && rect.Max.y == 0)
@@ -114,7 +47,7 @@ cv::Mat Fisch::screenshot(const ImRect& rect)
     return mat;
 }
 
-void Fisch::enableCameraMode(const ImVec2& pos)
+void Fisch::toggleCameraMode(const ImVec2& pos)
 {
     POINT robloxClientToScreenPoint{};
     ClientToScreen(robloxHWnd, &robloxClientToScreenPoint);
@@ -165,7 +98,7 @@ void Fisch::zoomIn()
         SendInput(1, &mouseScroll[0], sizeof(INPUT));
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
     SendInput(1, &mouseScroll[1], sizeof(INPUT));
 }
 
@@ -325,54 +258,111 @@ cv::Rect Fisch::findArrow(cv::Mat mat)
     return cv::Rect();
 }
 
-std::tuple<cv::Point, cv::Point> Fisch::getArrowToBarDistanceAndBarWidthHeight(cv::Mat mat)
-{
-    cv::Mat findArrowMat = mat;
-
-    cv::cvtColor(mat, mat, cv::COLOR_RGBA2GRAY);
-    cv::morphologyEx(mat, mat, cv::MORPH_OPEN, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)));
-    cv::GaussianBlur(mat, mat, cv::Size(3, 3), 0, 0);
-    cv::threshold(mat, mat, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
-    cv::Canny(mat, mat, 50, 150);
-    std::vector<std::vector<cv::Point>> contours{};
-    cv::findContours(mat, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-
-    std::vector<cv::Rect> barRects{};
-    for (auto& contour : contours)
-    {
-        double area = cv::contourArea(contour);
-        if (area < 50 || area > 3000)
-            continue;
-        cv::approxPolyDP(contour, contour, 0.05 * cv::arcLength(contour, true), true);
-        if (contour.size() > 4)
-            continue;
-        barRects.emplace_back(cv::boundingRect(contour));
-    }
-    if (barRects.empty())
-        return std::tuple<cv::Point, cv::Point>();
-
-    int xMin = barRects[0].x, yMin = barRects[0].y, xMax{}, yMax{};
-    for (const auto& rect : barRects) {
-        xMin = std::min(xMin, rect.x);
-        yMin = std::min(yMin, rect.y);
-        xMax = std::max(xMax, rect.x + rect.width);
-        yMax = std::max(yMax, rect.y + rect.height);
-    }
-
-    cv::Rect barRect = cv::Rect(xMin, yMin, xMax - xMin, yMax - yMin);
-    if (barRect.area() < 1000 || barRect.area() > 3000)
-        return std::tuple<cv::Point, cv::Point>();
-
-    cv::Rect arrowRect = findArrow(findArrowMat);
-    return {
-        {arrowRect.x - barRect.x, arrowRect.y - barRect.y},
-        {barRect.width , barRect.height}
-    };
-}
+//std::tuple<cv::Point, cv::Point> Fisch::getArrowToBarDistanceAndBarWidthHeight(cv::Mat mat)
+//{
+//    cv::Mat findArrowMat = mat;
+//
+//    cv::cvtColor(mat, mat, cv::COLOR_RGBA2GRAY);
+//    cv::morphologyEx(mat, mat, cv::MORPH_OPEN, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)));
+//    cv::GaussianBlur(mat, mat, cv::Size(3, 3), 0, 0);
+//    cv::threshold(mat, mat, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
+//    cv::Canny(mat, mat, 50, 150);
+//    std::vector<std::vector<cv::Point>> contours{};
+//    cv::findContours(mat, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+//
+//    std::vector<cv::Rect> barRects{};
+//    for (auto& contour : contours)
+//    {
+//        double area = cv::contourArea(contour);
+//        if (area < 50 || area > 3000)
+//            continue;
+//        cv::approxPolyDP(contour, contour, 0.05 * cv::arcLength(contour, true), true);
+//        if (contour.size() > 4)
+//            continue;
+//        barRects.emplace_back(cv::boundingRect(contour));
+//    }
+//    if (barRects.empty())
+//        return std::tuple<cv::Point, cv::Point>();
+//
+//    int xMin = barRects[0].x, yMin = barRects[0].y, xMax{}, yMax{};
+//    for (const auto& rect : barRects) {
+//        xMin = std::min(xMin, rect.x);
+//        yMin = std::min(yMin, rect.y);
+//        xMax = std::max(xMax, rect.x + rect.width);
+//        yMax = std::max(yMax, rect.y + rect.height);
+//    }
+//
+//    cv::Rect barRect = cv::Rect(xMin, yMin, xMax - xMin, yMax - yMin);
+//    if (barRect.area() < 1000 || barRect.area() > 3000)
+//        return std::tuple<cv::Point, cv::Point>();
+//
+//    cv::Rect arrowRect = findArrow(findArrowMat);
+//    return {
+//        {arrowRect.x - barRect.x, arrowRect.y - barRect.y},
+//        {barRect.width , barRect.height}
+//    };
+//}
 
 Fisch::Fisch()
 {
     robloxHWnd = FindWindowW(nullptr, L"Roblox");
     if (!robloxHWnd)
         error(L"Roblox not found");
+}
+
+SetPos::SetPos(ImVec2& pos, bool shouldShow)
+{
+    if (!shouldShow)
+        return;
+
+    int id = sizeof(pos) + pos.x + pos.y;
+    static int prevId{};
+    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
+    ImGui::PushID(id);
+    ImGui::Begin("set pos", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
+    if (id != prevId)
+    {
+        prevId = id;
+        ImGui::SetWindowPos({ pos.x - ImGui::GetWindowSize().x / 2.0f, pos.y - ImGui::GetWindowSize().y / 2.0f });
+    }
+
+    if (ImGui::Button("Ok"))
+    {
+        pos.x = ImGui::GetWindowPos().x + ImGui::GetWindowSize().x / 2.0f;
+        pos.y = ImGui::GetWindowPos().y + ImGui::GetWindowSize().y / 2.0f;
+    }
+
+    ImGui::End();
+    ImGui::PopID();
+    ImGui::PopStyleVar();
+}
+
+SetArea::SetArea(ImRect& rect, bool shouldShow)
+{
+    if (!shouldShow)
+        return;
+
+    int id = sizeof(rect) + rect.Min.x + rect.Min.y + rect.Max.x + rect.Max.y;
+    static int prevId{};
+    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
+    ImGui::PushID(id);
+    ImGui::Begin("set area", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
+    if (id != prevId)
+    {
+        prevId = id;
+        ImGui::SetWindowPos({ rect.Min.x , rect.Min.y });
+        ImGui::SetWindowSize({ rect.Max.x - rect.Min.x , rect.Max.y - rect.Min.y });
+    }
+
+    if (ImGui::Button("Ok"))
+    {
+        rect.Min.x = ImGui::GetWindowPos().x;
+        rect.Min.y = ImGui::GetWindowPos().y;
+        rect.Max.x = ImGui::GetWindowPos().x + ImGui::GetWindowSize().x;
+        rect.Max.y = ImGui::GetWindowPos().y + ImGui::GetWindowSize().y;
+    }
+
+    ImGui::End();
+    ImGui::PopID();
+    ImGui::PopStyleVar();
 }

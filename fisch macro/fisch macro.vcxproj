@@ -71,19 +71,19 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>C:\everything\codes\tools\vcpkg\installed\x64-windows-static\include\opencv4;C:\everything\codes\tools\vcpkg\installed\x64-windows-static\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\everything\codes\cpp\fisch macro\fisch macro\src;C:\everything\codes\tools\vcpkg\installed\x64-windows-static\include\opencv4;C:\everything\codes\tools\vcpkg\installed\x64-windows-static\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\everything\codes\tools\vcpkg\installed\x64-windows-static\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>C:\everything\codes\tools\vcpkg\installed\x64-windows-static\include\opencv4;C:\everything\codes\tools\vcpkg\installed\x64-windows-static\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\everything\codes\cpp\fisch macro\fisch macro\src;C:\everything\codes\tools\vcpkg\installed\x64-windows-static\include\opencv4;C:\everything\codes\tools\vcpkg\installed\x64-windows-static\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\everything\codes\tools\vcpkg\installed\x64-windows-static\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\everything\codes\tools\vcpkg\installed\x64-windows-static\include\opencv4;C:\everything\codes\tools\vcpkg\installed\x64-windows-static\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\everything\codes\cpp\fisch macro\fisch macro\src;C:\everything\codes\tools\vcpkg\installed\x64-windows-static\include\opencv4;C:\everything\codes\tools\vcpkg\installed\x64-windows-static\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\everything\codes\tools\vcpkg\installed\x64-windows-static\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>C:\everything\codes\tools\vcpkg\installed\x64-windows-static\include\opencv4;C:\everything\codes\tools\vcpkg\installed\x64-windows-static\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\everything\codes\cpp\fisch macro\fisch macro\src;C:\everything\codes\tools\vcpkg\installed\x64-windows-static\include\opencv4;C:\everything\codes\tools\vcpkg\installed\x64-windows-static\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\everything\codes\tools\vcpkg\installed\x64-windows-static\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

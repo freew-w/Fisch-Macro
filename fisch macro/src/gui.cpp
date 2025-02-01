@@ -57,32 +57,93 @@ void Gui::startRendering()
         ImGui::NewFrame();
         if (shouldRender)
         {
-            ImGui::Begin("fisch macro", &fisch.isRunning);
+            ImGui::SetNextWindowSize({ 520, 300 }, ImGuiCond_FirstUseEver);
+            ImGui::Begin("Fisch Macro", &fisch.isRunning);
+            {
+                static int page{};
+                ImGui::BeginChild("side bar", ImVec2(100, 0), true);
+                {
+                    if (ImGui::Button("Main", { 85, 30 }))
+                        page = 0;
+                    ImGui::NewLine();
+                    if (ImGui::Button("Config", { 85, 30 }))
+                        page = 1;
+                    ImGui::NewLine();
+                    if (ImGui::Button("Credits", { 85, 30 }))
+                        page = 2;
+                }
+                ImGui::EndChild();
 
-            ImGui::Checkbox("Enabled", &fisch.enabled);
+                ImGui::SameLine();
 
-            static bool doneSettingCameraModePos = true;
-            if (ImGui::Button("Set camera mode button position"))		doneSettingCameraModePos = !doneSettingCameraModePos;
+                ImGui::BeginChild("content", ImVec2(0, 0), true);
+                {
+                    static bool setCameraModePos{},
+                        setBarDeadZoneLeftPos{},
+                        setBarDeadZoneRightPos{},
+                        setShakeButtonSearchingArea{},
+                        setBarSearchingArea{};
 
-            static bool doneSettingBarDeadZoneLeftPos = true;
-            if (ImGui::Button("Set bar dead zone left position"))		doneSettingBarDeadZoneLeftPos = !doneSettingBarDeadZoneLeftPos;
+                    SetPos(config.coordinates.cameraModePos, setCameraModePos);
+                    SetPos(config.coordinates.barDeadZoneLeftPos, setBarDeadZoneLeftPos);
+                    SetPos(config.coordinates.barDeadZoneRightPos, setBarDeadZoneRightPos);
+                    SetArea(config.coordinates.searchShakeRect, setShakeButtonSearchingArea);
+                    SetArea(config.coordinates.searchBarRect, setBarSearchingArea);
 
-            static bool doneSettingBarDeadZoneRightPos = true;
-            if (ImGui::Button("Set bar dead zone right position"))		doneSettingBarDeadZoneRightPos = !doneSettingBarDeadZoneRightPos;
+                    switch (page)
+                    {
+                    case 0:
+                        ImGui::Text("Macro");
+                        ImGui::Separator();
 
-            static bool doneSettingShakeButtonSearchingArea = true;
-            if (ImGui::Button("Set shake button searching area"))		doneSettingShakeButtonSearchingArea = !doneSettingShakeButtonSearchingArea;
+                        if (ImGui::Checkbox("Enabled(F6)", &fisch.enabled))
+                            shouldRender = false;
 
-            static bool doneSettingBarSearchingArea = true;
-            if (ImGui::Button("Set bar searching area"))				doneSettingBarSearchingArea = !doneSettingBarSearchingArea;
+                        ImGui::Text("Auto Shake");
+                        ImGui::Separator();
 
+                        ImGui::Checkbox("Check Click Position", &config.config.checkClickShakePosition);
+                        if (!config.config.checkClickShakePosition)
+                        {
+                            ImGui::SameLine();
+                            ImGui::SetNextItemWidth(150);
+                            ImGui::InputInt("Click Shake Delay", &config.config.clickShakeDelay);
+                        }
+                        ImGui::Checkbox("Auto Enable Camera Mode", &config.config.autoEnableCameraMode);
+                        ImGui::Checkbox("Auto Blur", &config.config.autoBlur);
+                        ImGui::Checkbox("Auto Look Down", &config.config.autoLookDown);
+                        ImGui::Checkbox("Auto Zoom In", &config.config.autoZoomIn);
+
+                        ImGui::NewLine();
+
+                        if (ImGui::Button("Set Camera Mode Button Position"))		setCameraModePos = !setCameraModePos;
+                        if (ImGui::Button("Set Shake Button Searching Area"))		setShakeButtonSearchingArea = !setShakeButtonSearchingArea;
+
+                        ImGui::Text("Auto Bar Minigame");
+                        ImGui::Separator();
+
+                        ImGui::SetNextItemWidth(150);
+                        ImGui::InputDouble("Kp", &config.config.kp, 0.1, 1.0);
+                        ImGui::SetNextItemWidth(150);
+                        ImGui::InputDouble("Kd", &config.config.kd, 0.1, 1.0);
+
+                        ImGui::NewLine();
+
+                        if (ImGui::Button("Set Bar Dead Zone Left Position"))		setBarDeadZoneLeftPos = !setBarDeadZoneLeftPos;
+                        if (ImGui::Button("Set Bar Dead Zone Right Position"))		setBarDeadZoneRightPos = !setBarDeadZoneRightPos;
+                        if (ImGui::Button("Set Bar Searching Area"))				setBarSearchingArea = !setBarSearchingArea;
+
+                        break;
+                    case 1:
+                        ImGui::Text("Configgggggg");
+                        break;
+                    case 2:
+                        break;
+                    }
+                }
+                ImGui::EndChild();
+            }
             ImGui::End();
-
-            if (!doneSettingCameraModePos)				doneSettingCameraModePos = fisch.setPos(config.coordinates.cameraModePos);
-            if (!doneSettingBarDeadZoneLeftPos)			doneSettingBarDeadZoneLeftPos = fisch.setPos(config.coordinates.barDeadZoneLeftPos);
-            if (!doneSettingBarDeadZoneRightPos)		doneSettingBarDeadZoneRightPos = fisch.setPos(config.coordinates.barDeadZoneRightPos);
-            if (!doneSettingShakeButtonSearchingArea)	doneSettingShakeButtonSearchingArea = fisch.setArea(config.coordinates.searchShakeRect);
-            if (!doneSettingBarSearchingArea)			doneSettingBarSearchingArea = fisch.setArea(config.coordinates.searchBarRect);
         }
         ImGui::EndFrame();
 

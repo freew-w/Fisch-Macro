@@ -31,7 +31,7 @@ int main()
         {
             firstExec = false;
             if (config.config.autoEnableCameraMode)
-                fisch.enableCameraMode(config.coordinates.cameraModePos);
+                fisch.toggleCameraMode(config.coordinates.cameraModePos);
             if (config.config.autoLookDown)
                 fisch.lookDown();
             if (config.config.autoZoomIn)
@@ -55,7 +55,6 @@ int main()
         {
             findComponentFailSafe = 0;
 
-            static constexpr double kp = 0.1, kd = 2.0;
             static auto lastLoopTime = std::chrono::high_resolution_clock::now();
             static double prevError = lineRect.x - arrowRect.x;
             //static int prevArrowX = arrowRect.x;
@@ -67,7 +66,7 @@ int main()
             double derivative = (error - prevError) / deltaTime;
             //double velocity = deltaTime ? (arrowRect.x - prevArrowX) / static_cast<double>(deltaTime) : 0;
 
-            int output = static_cast<int>(kp * error + kd * derivative);
+            int output = static_cast<int>(config.config.kp * error + config.config.kd * derivative);
 
             if (lineRect.x < config.coordinates.barDeadZoneLeftPos.x)
             {

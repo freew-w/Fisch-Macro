@@ -12,6 +12,9 @@ public:
         bool autoBlur = true;
         bool autoLookDown = true;
         bool autoZoomIn = true;
+
+        double kp = 0.1;
+        double kd = 2.0;
     } config;
 
     struct

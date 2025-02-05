@@ -19,325 +19,64 @@ void Fisch::error(LPCWSTR msg)
     exit(EXIT_FAILURE);
 }
 
-cv::Mat Fisch::screenshot(const ImRect& rect)
+void Fisch::startMacro()
 {
-    if (rect.Min.x == 0 && rect.Min.y == 0 && rect.Max.x == 0 && rect.Max.y == 0)
-        return cv::Mat();
+    bool firstRun = true;
+    bool newRun = true;
 
-    POINT robloxClientToScreenPoint{};
-    ClientToScreen(robloxHWnd, &robloxClientToScreenPoint);
-    int w = static_cast<int>(rect.Max.x - rect.Min.x), h = static_cast<int>(rect.Max.y - rect.Min.y);
-
-    HDC hDC = GetDC(nullptr);
-    HDC hMemDC = CreateCompatibleDC(hDC);
-    HBITMAP hBitmap = CreateCompatibleBitmap(hDC, w, h);
-    HGDIOBJ hOldBitmap = SelectObject(hMemDC, hBitmap);
-
-    StretchBlt(hMemDC, 0, 0, w, h, hDC, static_cast<int>(robloxClientToScreenPoint.x + rect.Min.x), static_cast<int>(robloxClientToScreenPoint.y + rect.Min.y), w, h, SRCCOPY);
-
-    cv::Mat mat(h, w, CV_8UC4);
-    BITMAPINFOHEADER bih = { sizeof(BITMAPINFOHEADER), w, -h, 1, 32, BI_RGB };
-    GetDIBits(hDC, hBitmap, 0, h, mat.data, reinterpret_cast<BITMAPINFO*>(&bih), DIB_RGB_COLORS);
-
-    SelectObject(hMemDC, hOldBitmap);
-    DeleteDC(hMemDC);
-    DeleteObject(hBitmap);
-    ReleaseDC(nullptr, hDC);
-
-    return mat;
-}
-
-void Fisch::toggleCameraMode(const ImVec2& pos)
-{
-    POINT robloxClientToScreenPoint{};
-    ClientToScreen(robloxHWnd, &robloxClientToScreenPoint);
-
-    SetCursorPos(static_cast<int>(robloxClientToScreenPoint.x + pos.x), static_cast<int>(robloxClientToScreenPoint.y + pos.y));
-    SendInput(1, &mouseMove, sizeof(INPUT));
-    SendInput(2, leftMouseClick, sizeof(INPUT));
-}
-
-void Fisch::blurCamera()
-{
-    SendInput(2, mClick, sizeof(INPUT));
-}
-
-void Fisch::lookDown()
-{
-    RECT robloxClientRect{};
-    POINT robloxClientToScreenPoint{};
-    GetClientRect(robloxHWnd, &robloxClientRect);
-    ClientToScreen(robloxHWnd, &robloxClientToScreenPoint);
-
-    SetCursorPos(robloxClientToScreenPoint.x + robloxClientRect.right / 2, robloxClientToScreenPoint.y + robloxClientRect.bottom / 2);
-    SendInput(1, &mouseMove, sizeof(INPUT));
-    SendInput(1, &rightMouseClick[0], sizeof(INPUT));
-    MOUSEINPUT mi{};
-    INPUT input{};
-    mi.dwFlags = MOUSEEVENTF_MOVE;
-    input.type = INPUT_MOUSE;
-    for (int i{}; i < 50; i++) {
-        mi.dy = 700 / 50;
-        input.mi = mi;
-        SendInput(1, &input, sizeof(INPUT));
+    while (isRunning)
+    {
+        cv::waitKey(1);
+        if (GetAsyncKeyState(VK_F6) & 0x01) enabled = !enabled;
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    }
-    SendInput(1, &rightMouseClick[1], sizeof(INPUT));
-}
 
-void Fisch::zoomIn()
-{
-    RECT robloxClientRect{};
-    POINT robloxClientToScreenPoint{};
-    GetClientRect(robloxHWnd, &robloxClientRect);
-    ClientToScreen(robloxHWnd, &robloxClientToScreenPoint);
-
-    SetCursorPos(robloxClientToScreenPoint.x + robloxClientRect.right / 2, robloxClientToScreenPoint.y + robloxClientRect.bottom / 2);
-    for (int i{}; i < 40; i++)
-    {
-        SendInput(1, &mouseScroll[0], sizeof(INPUT));
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
-    }
-    std::this_thread::sleep_for(std::chrono::milliseconds(20));
-    SendInput(1, &mouseScroll[1], sizeof(INPUT));
-}
-
-void Fisch::castRod()
-{
-    RECT robloxClientRect{};
-    POINT robloxClientToScreenPoint{};
-    GetClientRect(robloxHWnd, &robloxClientRect);
-    ClientToScreen(robloxHWnd, &robloxClientToScreenPoint);
-
-    SetCursorPos(robloxClientToScreenPoint.x + robloxClientRect.right / 2, robloxClientToScreenPoint.y + robloxClientRect.bottom / 2);
-    SendInput(1, &mouseMove, sizeof(INPUT));
-    SendInput(1, &leftMouseClick[0], sizeof(INPUT));
-    std::this_thread::sleep_for(std::chrono::milliseconds(600));
-    SendInput(1, &leftMouseClick[1], sizeof(INPUT));
-}
-
-cv::Rect Fisch::findShakeButton(cv::Mat mat)
-{
-    cv::cvtColor(mat, mat, cv::COLOR_RGBA2GRAY);
-    cv::dilate(mat, mat, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)));
-    cv::Canny(mat, mat, 200, 300);
-    std::vector<std::vector<cv::Point>> contours{};
-    cv::findContours(mat, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-
-    for (auto& contour : contours)
-    {
-        double area = cv::contourArea(contour);
-        if (area < 7000 || area > 12500 || contour.size() < 100)
+        if (!enabled)
+        {
+            firstRun = true;
             continue;
-        cv::approxPolyDP(contour, contour, 0.05 * cv::arcLength(contour, true), true);
+        }
 
-        RECT robloxClientRect{};
-        GetClientRect(robloxHWnd, &robloxClientRect);
-        cv::Rect rect = cv::boundingRect(contour);
-        rect.x += static_cast<int>(config.coordinates.searchShakeRect.Min.x - robloxClientRect.left);
-        rect.y += static_cast<int>(config.coordinates.searchShakeRect.Min.y - robloxClientRect.top);
-        return rect;
-    }
+        if (firstRun)
+        {
+            firstRun = false;
+            if (config.config.autoEnableCameraMode) toggleCameraMode(config.coordinates.cameraModePosition);
+            if (config.config.autoLookDown) lookDown();
+            if (config.config.autoZoomIn) zoomIn();
+        }
 
-    return cv::Rect();
-}
-
-void Fisch::clickShakeButton(const cv::Rect& rect)
-{
-    POINT robloxClientToScreenPoint{};
-    ClientToScreen(robloxHWnd, &robloxClientToScreenPoint);
-
-    int posX = rect.x + rect.width / 2, posY = rect.y + rect.height / 2;
-
-    if (!config.config.checkClickShakePosition)
-        goto click;
-
-    static int lastPosX{}, lastPosY{};
-    if (abs((posX + posY) - (lastPosX + lastPosY)) <= 2)
-    {
-        lastPosX = posX;
-        lastPosY = posY;
-        return;
-    }
-    lastPosX = posX;
-    lastPosY = posY;
-
-click:
-    SetCursorPos(robloxClientToScreenPoint.x + posX, robloxClientToScreenPoint.y + posY);
-    SendInput(1, &mouseMove, sizeof(INPUT));
-    SendInput(2, leftMouseClick, sizeof(INPUT));
-}
-
-// POSITION IS RELATIVE TO THE IMAGE
-//cv::Rect Fisch::findBar(cv::Mat mat, bool isArrowOnLeft)
-//{
-//	cv::Rect rect = findArrow(mat);
-//
-//	if (!rect.x)
-//		return cv::Rect();
-//
-//	static auto [offset, widthHeight] = getArrowToBarDistanceAndBarWidthHeight(mat);
-//
-//	//if (GetAsyncKeyState(VK_LBUTTON) & 0x8000)
-//	//	return { rect.x + rect.width + offset.x - widthHeight.x, rect.y - offset.y, widthHeight.x, widthHeight.y };
-//	//else
-//	//	return { rect.x - offset.x, rect.y - offset.y, widthHeight.x, widthHeight.y };
-//
-//	//static int prevX = rect.x;
-//	//static bool isArrowOnLeft = true;
-//	//if (rect.x - prevX > 60)
-//	//{
-//	//	isArrowOnLeft = false;
-//	//	prevX = rect.x;
-//	//}
-//	//else if (prevX - rect.x > 60)
-//	//{
-//	//	isArrowOnLeft = true;
-//	//	prevX = rect.x;
-//	//}
-//
-//	//static auto lastResetTime = std::chrono::high_resolution_clock::now();
-//	//auto currentTime = std::chrono::high_resolution_clock::now();
-//	//if (std::chrono::duration_cast<std::chrono::milliseconds>(lastResetTime - currentTime).count() >= 10) {
-//	//	prevX = rect.x;
-//	//	lastResetTime = currentTime;
-//	//}
-//
-//	if (isArrowOnLeft)
-//		return { rect.x - offset.x, rect.y - offset.y, widthHeight.x, widthHeight.y };
-//	else
-//		return { rect.x + rect.width + offset.x - widthHeight.x, rect.y - offset.y, widthHeight.x, widthHeight.y };
-//}
-
-cv::Rect Fisch::findLine(cv::Mat mat)
-{
-    cv::cvtColor(mat, mat, cv::COLOR_BGR2HSV);
-
-    cv::inRange(mat, cv::Scalar(110, 50, 80), cv::Scalar(110, 70, 100), mat);
-    cv::medianBlur(mat, mat, 3);
-    std::vector<std::vector<cv::Point>> contours{};
-    cv::findContours(mat, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-
-    for (auto& contour : contours)
-    {
-        cv::approxPolyDP(contour, contour, 0.02 * cv::arcLength(contour, true), true);
-        RECT robloxClientRect{};
-        GetClientRect(robloxHWnd, &robloxClientRect);
-        cv::Rect rect = cv::boundingRect(contour);
-        rect.x += static_cast<int>(config.coordinates.searchBarRect.Min.x - robloxClientRect.left);
-        rect.y += static_cast<int>(config.coordinates.searchBarRect.Min.y - robloxClientRect.top);
-        return rect;
-    }
-
-    return cv::Rect();
-}
-
-cv::Rect Fisch::findArrow(cv::Mat mat)
-{
-    //cv::cvtColor(mat, mat, cv::COLOR_RGBA2RGB);
-    //cv::inRange(mat, cv::Scalar(116, 114, 116), cv::Scalar(143, 144, 146), mat);
-    cv::cvtColor(mat, mat, cv::COLOR_BGR2HSV);
-    cv::inRange(mat, cv::Scalar(0, 0, 120), cv::Scalar(180, 20, 140), mat);
-    cv::medianBlur(mat, mat, 3);
-    std::vector<std::vector<cv::Point>> contours{};
-    cv::findContours(mat, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-
-    for (auto& contour : contours)
-    {
-        cv::approxPolyDP(contour, contour, 0.02 * cv::arcLength(contour, true), true);
-        if (contour.size() < 5 || cv::contourArea(contour) < 20)
+        cv::Rect shakeButtonRect = findShakeButton(screenshot(config.coordinates.searchShakeRect));
+        if (shakeButtonRect.width)
+        {
+            clickShakeButton(shakeButtonRect);
             continue;
-        RECT robloxClientRect{};
-        GetClientRect(robloxHWnd, &robloxClientRect);
-        cv::Rect rect = cv::boundingRect(contour);
-        rect.x += static_cast<int>(config.coordinates.searchBarRect.Min.x - robloxClientRect.left);
-        rect.y += static_cast<int>(config.coordinates.searchBarRect.Min.y - robloxClientRect.top);
-        return rect;
-    }
+        }
 
-    return cv::Rect();
+        cv::Mat minigameMat = screenshot(config.coordinates.searchBarRect);
+        auto [lineRect, arrowRect] = findLineAndArrow(minigameMat);
+        if (lineRect.x && arrowRect.width)
+        {
+            if (newRun)
+            {
+                newRun = false;
+                if (config.config.autoCalculateBarWidth)
+                    config.config.barWidth = getBarWidth(minigameMat);
+            }
+
+            doBarMinigame(lineRect, arrowRect);
+            continue;
+        }
+
+        if (increaseFailSafe())
+        {
+            newRun = true;
+            if (config.config.autoBlur) blurCamera();
+            if (config.config.autoLookDown) lookDown();
+            castRod();
+        }
+    }
 }
 
-//std::tuple<cv::Point, cv::Point> Fisch::getArrowToBarDistanceAndBarWidthHeight(cv::Mat mat)
-//{
-//    cv::Mat findArrowMat = mat;
-//
-//    cv::cvtColor(mat, mat, cv::COLOR_RGBA2GRAY);
-//    cv::morphologyEx(mat, mat, cv::MORPH_OPEN, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)));
-//    cv::GaussianBlur(mat, mat, cv::Size(3, 3), 0, 0);
-//    cv::threshold(mat, mat, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
-//    cv::Canny(mat, mat, 50, 150);
-//    std::vector<std::vector<cv::Point>> contours{};
-//    cv::findContours(mat, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-//
-//    std::vector<cv::Rect> barRects{};
-//    for (auto& contour : contours)
-//    {
-//        double area = cv::contourArea(contour);
-//        if (area < 50 || area > 3000)
-//            continue;
-//        cv::approxPolyDP(contour, contour, 0.05 * cv::arcLength(contour, true), true);
-//        if (contour.size() > 4)
-//            continue;
-//        barRects.emplace_back(cv::boundingRect(contour));
-//    }
-//    if (barRects.empty())
-//        return std::tuple<cv::Point, cv::Point>();
-//
-//    int xMin = barRects[0].x, yMin = barRects[0].y, xMax{}, yMax{};
-//    for (const auto& rect : barRects) {
-//        xMin = std::min(xMin, rect.x);
-//        yMin = std::min(yMin, rect.y);
-//        xMax = std::max(xMax, rect.x + rect.width);
-//        yMax = std::max(yMax, rect.y + rect.height);
-//    }
-//
-//    cv::Rect barRect = cv::Rect(xMin, yMin, xMax - xMin, yMax - yMin);
-//    if (barRect.area() < 1000 || barRect.area() > 3000)
-//        return std::tuple<cv::Point, cv::Point>();
-//
-//    cv::Rect arrowRect = findArrow(findArrowMat);
-//    return {
-//        {arrowRect.x - barRect.x, arrowRect.y - barRect.y},
-//        {barRect.width , barRect.height}
-//    };
-//}
-
-Fisch::Fisch()
-{
-    robloxHWnd = FindWindowW(nullptr, L"Roblox");
-    if (!robloxHWnd)
-        error(L"Roblox not found");
-}
-
-SetPos::SetPos(ImVec2& pos, bool shouldShow)
-{
-    if (!shouldShow)
-        return;
-
-    int id = sizeof(pos) + pos.x + pos.y;
-    static int prevId{};
-    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
-    ImGui::PushID(id);
-    ImGui::Begin("set pos", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
-    if (id != prevId)
-    {
-        prevId = id;
-        ImGui::SetWindowPos({ pos.x - ImGui::GetWindowSize().x / 2.0f, pos.y - ImGui::GetWindowSize().y / 2.0f });
-    }
-
-    if (ImGui::Button("Ok"))
-    {
-        pos.x = ImGui::GetWindowPos().x + ImGui::GetWindowSize().x / 2.0f;
-        pos.y = ImGui::GetWindowPos().y + ImGui::GetWindowSize().y / 2.0f;
-    }
-
-    ImGui::End();
-    ImGui::PopID();
-    ImGui::PopStyleVar();
-}
-
-SetArea::SetArea(ImRect& rect, bool shouldShow)
+void Fisch::setRegion(ImRect& rect, bool& shouldShow)
 {
     if (!shouldShow)
         return;
@@ -354,15 +93,373 @@ SetArea::SetArea(ImRect& rect, bool shouldShow)
         ImGui::SetWindowSize({ rect.Max.x - rect.Min.x , rect.Max.y - rect.Min.y });
     }
 
+    if (GetAsyncKeyState(VK_CONTROL) & 0x8000 && GetAsyncKeyState(VK_LBUTTON) & 0x8000)
+    {
+        while (GetAsyncKeyState(VK_LBUTTON) & 0x8000);
+        POINT cursorPoint;
+        GetCursorPos(&cursorPoint);
+        ScreenToClient(fisch.robloxHWnd, &cursorPoint);
+
+        static std::array<ImVec2, 2> points{};
+        for (int i{}; i < points.size(); i++)
+        {
+            if (!points[i].x && !points[i].y)
+            {
+                points[i].x = cursorPoint.x;
+                points[i].y = cursorPoint.y;
+
+                if (i == 0)
+                    break;
+                if (i == points.size() - 1)
+                {
+                    ImGui::SetWindowPos({ std::min(points[0].x, points[1].x), std::min(points[0].y, points[1].y) });
+                    ImGui::SetWindowSize({ std::max(points[0].x, points[1].x) - std::min(points[0].x, points[1].x), std::max(points[0].y, points[1].y) - std::min(points[0].y, points[1].y) });
+                    points = {};
+                }
+            }
+        }
+    }
+
     if (ImGui::Button("Ok"))
     {
         rect.Min.x = ImGui::GetWindowPos().x;
         rect.Min.y = ImGui::GetWindowPos().y;
         rect.Max.x = ImGui::GetWindowPos().x + ImGui::GetWindowSize().x;
         rect.Max.y = ImGui::GetWindowPos().y + ImGui::GetWindowSize().y;
+        prevId = id;
+        shouldShow = false;
     }
 
     ImGui::End();
     ImGui::PopID();
     ImGui::PopStyleVar();
+}
+
+void Fisch::setPosition(ImVec2& pos, bool& shouldShow)
+{
+    if (!shouldShow)
+        return;
+
+    int id = sizeof(pos) + pos.x + pos.y;
+    static int prevId{};
+    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
+    ImGui::PushID(id);
+    ImGui::Begin("set pos", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
+    if (id != prevId)
+    {
+        prevId = id;
+        ImGui::SetWindowPos({ pos.x - ImGui::GetWindowSize().x / 2.0f, pos.y - ImGui::GetWindowSize().y / 2.0f });
+    }
+
+    if (GetAsyncKeyState(VK_RBUTTON) & 0x01)
+    {
+        POINT cursorPoint;
+        GetCursorPos(&cursorPoint);
+        ScreenToClient(fisch.robloxHWnd, &cursorPoint);
+
+        ImGui::SetWindowPos({ cursorPoint.x - ImGui::GetWindowSize().x / 2.0f, cursorPoint.y - ImGui::GetWindowSize().y / 2.0f });
+    }
+
+    if (ImGui::Button("Ok"))
+    {
+        pos.x = ImGui::GetWindowPos().x + ImGui::GetWindowSize().x / 2.0f;
+        pos.y = ImGui::GetWindowPos().y + ImGui::GetWindowSize().y / 2.0f;
+        prevId = id;
+        shouldShow = false;
+    }
+
+    ImGui::End();
+    ImGui::PopID();
+    ImGui::PopStyleVar();
+}
+
+Fisch::Fisch()
+{
+    robloxHWnd = FindWindowW(nullptr, L"Roblox");
+    if (!robloxHWnd)
+        error(L"Roblox not found");
+}
+
+inline void Fisch::toggleCameraMode(const ImVec2& pos)
+{
+    POINT robloxClientToScreenPoint{};
+    ClientToScreen(robloxHWnd, &robloxClientToScreenPoint);
+
+    SetCursorPos(static_cast<int>(robloxClientToScreenPoint.x + pos.x), static_cast<int>(robloxClientToScreenPoint.y + pos.y));
+    SendInput(1, &mouseMove, sizeof(INPUT));
+    SendInput(2, leftMouseClick, sizeof(INPUT));
+}
+
+inline void Fisch::blurCamera()
+{
+    SendInput(2, mClick, sizeof(INPUT));
+}
+
+inline void Fisch::lookDown()
+{
+    RECT robloxClientRect;
+    POINT robloxClientToScreenPoint{};
+    GetClientRect(robloxHWnd, &robloxClientRect);
+    ClientToScreen(robloxHWnd, &robloxClientToScreenPoint);
+
+    SetCursorPos(robloxClientToScreenPoint.x + robloxClientRect.right / 2, robloxClientToScreenPoint.y + robloxClientRect.bottom / 2);
+    SendInput(1, &mouseMove, sizeof(INPUT));
+    SendInput(1, &rightMouseClick[0], sizeof(INPUT));
+    INPUT input{ .type = INPUT_MOUSE, .mi{0, 800 / 50, 0, MOUSEEVENTF_MOVE, 0, 0} };
+    for (int i{}; i < 50; i++) {
+        SendInput(1, &input, sizeof(INPUT));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    SendInput(1, &rightMouseClick[1], sizeof(INPUT));
+}
+
+inline void Fisch::zoomIn()
+{
+    RECT robloxClientRect;
+    POINT robloxClientToScreenPoint{};
+    GetClientRect(robloxHWnd, &robloxClientRect);
+    ClientToScreen(robloxHWnd, &robloxClientToScreenPoint);
+
+    SetCursorPos(robloxClientToScreenPoint.x + robloxClientRect.right / 2, robloxClientToScreenPoint.y + robloxClientRect.bottom / 2);
+    for (int i{}; i < 40; i++)
+    {
+        SendInput(1, &mouseScroll[0], sizeof(INPUT));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    SendInput(1, &mouseScroll[1], sizeof(INPUT));
+}
+
+inline void Fisch::castRod()
+{
+    RECT robloxClientRect;
+    POINT robloxClientToScreenPoint{};
+    GetClientRect(robloxHWnd, &robloxClientRect);
+    ClientToScreen(robloxHWnd, &robloxClientToScreenPoint);
+
+    SetCursorPos(robloxClientToScreenPoint.x + robloxClientRect.right / 2, robloxClientToScreenPoint.y + robloxClientRect.bottom / 2);
+    SendInput(1, &mouseMove, sizeof(INPUT));
+    SendInput(1, &leftMouseClick[0], sizeof(INPUT));
+    std::this_thread::sleep_for(std::chrono::milliseconds(config.config.castTime));
+    SendInput(1, &leftMouseClick[1], sizeof(INPUT));
+}
+
+inline cv::Mat Fisch::screenshot(const ImRect& rect)
+{
+    static HDC hScreenDC = GetDC(nullptr);
+    static HDC hMemDC = CreateCompatibleDC(hScreenDC);
+    static HBITMAP hBitmap{};
+    static int prevW{}, prevH{};
+
+    POINT robloxClientToScreenPoint{};
+    ClientToScreen(robloxHWnd, &robloxClientToScreenPoint);
+    int w = static_cast<int>(rect.Max.x - rect.Min.x);
+    int h = static_cast<int>(rect.Max.y - rect.Min.y);
+
+    if (prevW != w || prevH != h)
+    {
+        if (hBitmap)
+            DeleteObject(hBitmap);
+        hBitmap = CreateCompatibleBitmap(hScreenDC, w, h);
+        prevW = w;
+        prevH = h;
+    }
+
+    HGDIOBJ hOldBitmap = SelectObject(hMemDC, hBitmap);
+    BitBlt(hMemDC, 0, 0, w, h, hScreenDC, static_cast<int>(robloxClientToScreenPoint.x + rect.Min.x), static_cast<int>(robloxClientToScreenPoint.y + rect.Min.y), SRCCOPY);
+
+    cv::Mat mat(h, w, CV_8UC4);
+    BITMAPINFOHEADER bih = { sizeof(BITMAPINFOHEADER), w, -h, 1, 32, BI_RGB };
+    GetDIBits(hMemDC, hBitmap, 0, h, mat.data, reinterpret_cast<BITMAPINFO*>(&bih), DIB_RGB_COLORS);
+    SelectObject(hMemDC, hOldBitmap);
+
+    return mat;
+}
+
+inline cv::Rect Fisch::findShakeButton(cv::Mat mat)
+{
+    cv::cvtColor(mat, mat, cv::COLOR_RGBA2GRAY);
+    cv::dilate(mat, mat, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)));
+    cv::Canny(mat, mat, 200, 300);
+    std::vector<std::vector<cv::Point>> contours;
+    cv::findContours(mat, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+    for (auto& contour : contours)
+    {
+        double area = cv::contourArea(contour);
+        if (area < config.config.minimumShakeButtonArea || area > config.config.maximumShakeButtonArea || contour.size() < 100)
+            continue;
+        cv::approxPolyDP(contour, contour, 0.05 * cv::arcLength(contour, true), true);
+
+        RECT robloxClientRect;
+        GetClientRect(robloxHWnd, &robloxClientRect);
+        cv::Rect rect = cv::boundingRect(contour);
+        rect.x += static_cast<int>(config.coordinates.searchShakeRect.Min.x - robloxClientRect.left);
+        rect.y += static_cast<int>(config.coordinates.searchShakeRect.Min.y - robloxClientRect.top);
+        return rect;
+    }
+
+    return cv::Rect();
+}
+
+inline int Fisch::getBarWidth(cv::Mat mat)
+{
+    cv::cvtColor(mat, mat, cv::COLOR_RGBA2GRAY);
+    cv::morphologyEx(mat, mat, cv::MORPH_OPEN, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)));
+    cv::GaussianBlur(mat, mat, cv::Size(3, 3), 0, 0);
+    cv::threshold(mat, mat, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
+    cv::Canny(mat, mat, 50, 150);
+    std::vector<std::vector<cv::Point>> contours;
+    cv::findContours(mat, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+    std::vector<cv::Rect> rects;
+    for (auto& contour : contours)
+    {
+        cv::approxPolyDP(contour, contour, 0.05 * cv::arcLength(contour, true), true);
+        if (contour.size() != 4)
+            continue;
+        double area = cv::contourArea(contour);
+        if (area < 50 || area > 10000)
+            continue;
+        rects.emplace_back(cv::boundingRect(contour));
+    }
+    if (rects.empty())
+        return 0;
+
+    int xMin = rects[0].x, xMax{};
+    for (const auto& rect : rects)
+    {
+        xMin = std::min(xMin, rect.x);
+        xMax = std::max(xMax, rect.x + rect.width);
+    }
+
+    return xMax - xMin;
+}
+
+inline std::pair<cv::Rect, cv::Rect> Fisch::findLineAndArrow(cv::Mat mat)
+{
+    RECT robloxClientRect;
+    GetClientRect(robloxHWnd, &robloxClientRect);
+    int offsetX = static_cast<int>(config.coordinates.searchBarRect.Min.x - robloxClientRect.left);
+    int offsetY = static_cast<int>(config.coordinates.searchBarRect.Min.y - robloxClientRect.top);
+
+    cv::cvtColor(mat, mat, cv::COLOR_BGR2HSV);
+
+    cv::Mat lineMat;
+    cv::inRange(mat, cv::Scalar(110, 50, 80), cv::Scalar(110, 70, 100), lineMat);
+    cv::medianBlur(lineMat, lineMat, 3);
+    std::vector<std::vector<cv::Point>> lineContours;
+    cv::findContours(lineMat, lineContours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+    cv::Rect lineRect;
+    for (auto& contour : lineContours)
+    {
+        cv::approxPolyDP(contour, contour, 0.02 * cv::arcLength(contour, true), true);
+        lineRect = cv::boundingRect(contour);
+        lineRect.x += offsetX;
+        lineRect.y += offsetY;
+    }
+
+    cv::Mat arrowMat;
+    cv::inRange(mat, cv::Scalar(0, 0, 120), cv::Scalar(180, 20, 140), arrowMat);
+    cv::medianBlur(arrowMat, arrowMat, 3);
+    std::vector<std::vector<cv::Point>> arrowContours;
+    cv::findContours(arrowMat, arrowContours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+    cv::Rect arrowRect;
+    for (auto& contour : arrowContours)
+    {
+        cv::approxPolyDP(contour, contour, 0.02 * cv::arcLength(contour, true), true);
+        if (contour.size() < 5 || cv::contourArea(contour) < 20)
+            continue;
+        arrowRect = cv::boundingRect(contour);
+        arrowRect.x += offsetX;
+        arrowRect.y += offsetY;
+    }
+
+    return { lineRect, arrowRect };
+}
+
+inline void Fisch::clickShakeButton(const cv::Rect& rect)
+{
+    failedDetectionFailSafe = 0;
+
+    POINT robloxClientToScreenPoint{};
+    ClientToScreen(robloxHWnd, &robloxClientToScreenPoint);
+
+    if (!config.config.checkClickShakePosition)
+    {
+        SetCursorPos(robloxClientToScreenPoint.x + rect.x + rect.width / 2, robloxClientToScreenPoint.y + rect.y + rect.height / 2);
+        SendInput(1, &mouseMove, sizeof(INPUT));
+        SendInput(2, leftMouseClick, sizeof(INPUT));
+        std::this_thread::sleep_for(std::chrono::milliseconds(config.config.clickShakeDelay));
+        return;
+    }
+
+    static int lastPosX{}, lastPosY{};
+    if (abs(lastPosX - rect.x) <= 15 && abs(lastPosY - rect.y) <= 15)
+        return;
+    lastPosX = rect.x;
+    lastPosY = rect.y;
+
+    SetCursorPos(robloxClientToScreenPoint.x + rect.x + rect.width / 2, robloxClientToScreenPoint.y + rect.y + rect.height / 2);
+    SendInput(1, &mouseMove, sizeof(INPUT));
+    SendInput(2, leftMouseClick, sizeof(INPUT));
+}
+
+inline void Fisch::doBarMinigame(const cv::Rect& lineRect, const cv::Rect& arrowRect)
+{
+    failedDetectionFailSafe = 0;
+
+    static auto lastLoopTime = std::chrono::steady_clock::now();
+    static double prevError{};
+
+    auto currentTime = std::chrono::steady_clock::now();
+    auto deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastLoopTime).count();
+    double error = lineRect.x - arrowRect.x;
+
+    double derivative = (error - prevError) / deltaTime;
+    int output = static_cast<int>(config.config.kp * error + config.config.kd * derivative);
+    output = std::clamp(output, -config.config.barWidth, config.config.barWidth);
+
+    if (config.config.useBarDeadZoneLeft && lineRect.x < config.coordinates.barDeadZoneLeftPosition.x)
+    {
+        SendInput(1, &fisch.leftMouseClick[1], sizeof(INPUT));
+        return;
+    }
+    else if (config.config.useBarDeadZoneRight && lineRect.x > config.coordinates.barDeadZoneRightPosition.x)
+    {
+        SendInput(1, &fisch.leftMouseClick[0], sizeof(INPUT));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        return;
+    }
+
+    if (output > 0)
+        SendInput(1, &leftMouseClick[0], sizeof(INPUT));
+    else
+        SendInput(1, &leftMouseClick[1], sizeof(INPUT));
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(abs(output)));
+
+    prevError = error;
+    lastLoopTime = currentTime;
+}
+
+inline bool Fisch::increaseFailSafe()
+{
+    static auto lastIncrementTime = std::chrono::steady_clock::now();
+    auto currentTime = std::chrono::steady_clock::now();
+
+    if (std::chrono::duration_cast<std::chrono::seconds>(currentTime - lastIncrementTime).count() >= 1)
+    {
+        failedDetectionFailSafe++;
+        lastIncrementTime = currentTime;
+    }
+
+    if (failedDetectionFailSafe >= config.config.failSafeCount)
+    {
+        failedDetectionFailSafe = 0;
+        return true;
+    }
+    return false;
 }

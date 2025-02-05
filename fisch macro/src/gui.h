@@ -18,6 +18,7 @@ private:
     ~Gui();
     static LRESULT CALLBACK sWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
     LRESULT WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+    static void helpMarker(const char* desc);
 };
 
 inline Gui& gui = Gui::get();

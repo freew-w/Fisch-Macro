@@ -1,3 +1,7 @@
-work in progress
+# Fisch Macro
+## Showcase
+https://youtu.be/cP-66vrtNMo
 
-i have made a working [macro](https://www.youtube.com/watch?v=kc6_cCSDF9s) before but it was too resource intensive(10% - 30%) cpu usage
+[![Showcase](https://img.youtube.com/vi/cP-66vrtNMo/hqdefault.jpg)](https://youtu.be/cP-66vrtNMo)
+## Installation
+* Download "fisch-macro.exe" from the latest [releases](https://github.com/freew-w/Fisch-Macro/releases) tab

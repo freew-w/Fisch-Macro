@@ -23,8 +23,7 @@ private:
     INPUT leftMouseClick[2]{ {.type = INPUT_MOUSE, .mi{0, 0, 0, MOUSEEVENTF_LEFTDOWN, 0, 0}}, {.type = INPUT_MOUSE, .mi{0, 0, 0, MOUSEEVENTF_LEFTUP, 0, 0}} };
     INPUT rightMouseClick[2]{ {.type = INPUT_MOUSE, .mi{0, 0, 0, MOUSEEVENTF_RIGHTDOWN, 0, 0}}, {.type = INPUT_MOUSE, .mi{0, 0, 0, MOUSEEVENTF_RIGHTUP, 0, 0}} };
     INPUT mClick[2]{ {.type = INPUT_KEYBOARD, .ki{0, static_cast<WORD>(MapVirtualKey(0x4d, MAPVK_VK_TO_VSC)), KEYEVENTF_SCANCODE, 0, 0}}, {.type = INPUT_KEYBOARD, .ki{0, static_cast<WORD>(MapVirtualKey(0x4d, MAPVK_VK_TO_VSC)), KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP, 0, 0}} };
-
-    int failedDetectionFailSafe{};
+    INPUT graveClick[2]{ {.type = INPUT_KEYBOARD, .ki{0, static_cast<WORD>(MapVirtualKey(VK_OEM_3, MAPVK_VK_TO_VSC)), KEYEVENTF_SCANCODE, 0, 0}}, {.type = INPUT_KEYBOARD, .ki{0, static_cast<WORD>(MapVirtualKey(VK_OEM_3, MAPVK_VK_TO_VSC)), KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP, 0, 0}} };
 
     Fisch();
 
@@ -32,6 +31,7 @@ private:
     inline void blurCamera();
     inline void lookDown();
     inline void zoomIn();
+    inline void sell(const ImVec2& pos);
     inline void castRod();
 
     inline cv::Mat screenshot(const ImRect& rect);
@@ -42,7 +42,7 @@ private:
 
     inline void clickShakeButton(const cv::Rect& rect);
     inline void doBarMinigame(const cv::Rect& lineRect, const cv::Rect& arrowRect);
-    inline bool increaseFailSafe();
+    inline bool failSafe(bool reset = false);
 };
 
 inline Fisch& fisch = Fisch::get();

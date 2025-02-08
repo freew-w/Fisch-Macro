@@ -33,6 +33,7 @@ void Fisch::startMacro()
         if (!enabled)
         {
             firstRun = true;
+            newRun = true;
             continue;
         }
 
@@ -47,7 +48,13 @@ void Fisch::startMacro()
         cv::Rect shakeButtonRect = findShakeButton(screenshot(config.coordinates.searchShakeRect));
         if (shakeButtonRect.width)
         {
+            failSafe(true);
+
+            if (!config.config.autoShake)
+                continue;
+
             clickShakeButton(shakeButtonRect);
+
             continue;
         }
 
@@ -55,6 +62,11 @@ void Fisch::startMacro()
         auto [lineRect, arrowRect] = findLineAndArrow(minigameMat);
         if (lineRect.x && arrowRect.width)
         {
+            failSafe(true);
+
+            if (!config.config.autoBarMinigame)
+                continue;
+
             if (newRun)
             {
                 newRun = false;
@@ -63,12 +75,14 @@ void Fisch::startMacro()
             }
 
             doBarMinigame(lineRect, arrowRect);
+
             continue;
         }
 
-        if (increaseFailSafe())
+        if (failSafe())
         {
             newRun = true;
+            if (config.config.autoSell) sell(config.coordinates.sellButtonPosition);
             if (config.config.autoBlur) blurCamera();
             if (config.config.autoLookDown) lookDown();
             castRod();
@@ -81,7 +95,7 @@ void Fisch::setRegion(ImRect& rect, bool& shouldShow)
     if (!shouldShow)
         return;
 
-    int id = sizeof(rect) + rect.Min.x + rect.Min.y + rect.Max.x + rect.Max.y;
+    int id = static_cast<int>(sizeof(rect) + rect.Min.x + rect.Min.y + rect.Max.x + rect.Max.y);
     static int prevId{};
     ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
     ImGui::PushID(id);
@@ -105,8 +119,8 @@ void Fisch::setRegion(ImRect& rect, bool& shouldShow)
         {
             if (!points[i].x && !points[i].y)
             {
-                points[i].x = cursorPoint.x;
-                points[i].y = cursorPoint.y;
+                points[i].x = static_cast<float>(cursorPoint.x);
+                points[i].y = static_cast<float>(cursorPoint.y);
 
                 if (i == 0)
                     break;
@@ -126,6 +140,7 @@ void Fisch::setRegion(ImRect& rect, bool& shouldShow)
         rect.Min.y = ImGui::GetWindowPos().y;
         rect.Max.x = ImGui::GetWindowPos().x + ImGui::GetWindowSize().x;
         rect.Max.y = ImGui::GetWindowPos().y + ImGui::GetWindowSize().y;
+        id = static_cast<int>(sizeof(rect) + rect.Min.x + rect.Min.y + rect.Max.x + rect.Max.y);
         prevId = id;
         shouldShow = false;
     }
@@ -140,7 +155,7 @@ void Fisch::setPosition(ImVec2& pos, bool& shouldShow)
     if (!shouldShow)
         return;
 
-    int id = sizeof(pos) + pos.x + pos.y;
+    int id = static_cast<int>(sizeof(pos) + pos.x + pos.y);
     static int prevId{};
     ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
     ImGui::PushID(id);
@@ -164,6 +179,7 @@ void Fisch::setPosition(ImVec2& pos, bool& shouldShow)
     {
         pos.x = ImGui::GetWindowPos().x + ImGui::GetWindowSize().x / 2.0f;
         pos.y = ImGui::GetWindowPos().y + ImGui::GetWindowSize().y / 2.0f;
+        id = static_cast<int>(sizeof(pos) + pos.x + pos.y);
         prevId = id;
         shouldShow = false;
     }
@@ -208,7 +224,7 @@ inline void Fisch::lookDown()
     INPUT input{ .type = INPUT_MOUSE, .mi{0, 800 / 50, 0, MOUSEEVENTF_MOVE, 0, 0} };
     for (int i{}; i < 50; i++) {
         SendInput(1, &input, sizeof(INPUT));
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }
     SendInput(1, &rightMouseClick[1], sizeof(INPUT));
 }
@@ -228,6 +244,27 @@ inline void Fisch::zoomIn()
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(20));
     SendInput(1, &mouseScroll[1], sizeof(INPUT));
+}
+
+inline void Fisch::sell(const ImVec2& pos)
+{
+    POINT robloxClientToScreenPoint{};
+    ClientToScreen(robloxHWnd, &robloxClientToScreenPoint);
+
+
+    if (config.config.autoEnableCameraMode)
+        toggleCameraMode(config.coordinates.cameraModePosition);
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    SendInput(2, graveClick, sizeof(INPUT));
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    SetCursorPos(static_cast<int>(robloxClientToScreenPoint.x + pos.x), static_cast<int>(robloxClientToScreenPoint.y + pos.y));
+    SendInput(1, &mouseMove, sizeof(INPUT));
+    SendInput(2, leftMouseClick, sizeof(INPUT));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    SendInput(2, graveClick, sizeof(INPUT));
+    if (config.config.autoEnableCameraMode)
+        toggleCameraMode(config.coordinates.cameraModePosition);
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
 }
 
 inline void Fisch::castRod()
@@ -382,8 +419,6 @@ inline std::pair<cv::Rect, cv::Rect> Fisch::findLineAndArrow(cv::Mat mat)
 
 inline void Fisch::clickShakeButton(const cv::Rect& rect)
 {
-    failedDetectionFailSafe = 0;
-
     POINT robloxClientToScreenPoint{};
     ClientToScreen(robloxHWnd, &robloxClientToScreenPoint);
 
@@ -396,28 +431,29 @@ inline void Fisch::clickShakeButton(const cv::Rect& rect)
         return;
     }
 
+    int posX = rect.x + rect.width / 2;
+    int posY = rect.y + rect.height / 2;
     static int lastPosX{}, lastPosY{};
-    if (abs(lastPosX - rect.x) <= 15 && abs(lastPosY - rect.y) <= 15)
+    if (abs(lastPosX - posX) <= 10 && abs(lastPosY - posY) <= 10)
         return;
-    lastPosX = rect.x;
-    lastPosY = rect.y;
+    lastPosX = posX;
+    lastPosY = posY;
 
-    SetCursorPos(robloxClientToScreenPoint.x + rect.x + rect.width / 2, robloxClientToScreenPoint.y + rect.y + rect.height / 2);
+    SetCursorPos(robloxClientToScreenPoint.x + posX, robloxClientToScreenPoint.y + posY);
     SendInput(1, &mouseMove, sizeof(INPUT));
     SendInput(2, leftMouseClick, sizeof(INPUT));
 }
 
 inline void Fisch::doBarMinigame(const cv::Rect& lineRect, const cv::Rect& arrowRect)
 {
-    failedDetectionFailSafe = 0;
-
     static auto lastLoopTime = std::chrono::steady_clock::now();
-    static double prevError{};
 
     auto currentTime = std::chrono::steady_clock::now();
     auto deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastLoopTime).count();
-    double error = lineRect.x - arrowRect.x;
 
+    static double prevError{};
+
+    double error = lineRect.x - arrowRect.x;
     double derivative = (error - prevError) / deltaTime;
     int output = static_cast<int>(config.config.kp * error + config.config.kd * derivative);
     output = std::clamp(output, -config.config.barWidth, config.config.barWidth);
@@ -445,20 +481,27 @@ inline void Fisch::doBarMinigame(const cv::Rect& lineRect, const cv::Rect& arrow
     lastLoopTime = currentTime;
 }
 
-inline bool Fisch::increaseFailSafe()
+inline bool Fisch::failSafe(bool reset)
 {
+    static int failSafe{};
+    if (reset)
+    {
+        failSafe = 0;
+        return false;
+    }
+
     static auto lastIncrementTime = std::chrono::steady_clock::now();
     auto currentTime = std::chrono::steady_clock::now();
 
     if (std::chrono::duration_cast<std::chrono::seconds>(currentTime - lastIncrementTime).count() >= 1)
     {
-        failedDetectionFailSafe++;
+        failSafe++;
         lastIncrementTime = currentTime;
     }
 
-    if (failedDetectionFailSafe >= config.config.failSafeCount)
+    if (failSafe >= config.config.failSafeCount)
     {
-        failedDetectionFailSafe = 0;
+        failSafe = 0;
         return true;
     }
     return false;

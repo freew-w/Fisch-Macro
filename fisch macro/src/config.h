@@ -7,35 +7,40 @@ public:
     {
         int failSafeCount = 2;
 
-        int castTime = 200;
-
         bool autoEnableCameraMode = true;
         bool autoBlur = true;
         bool autoLookDown = true;
         bool autoZoomIn = true;
+        int castTime = 200;
 
+        bool autoShake = true;
         int minimumShakeButtonArea = 7000;
         int maximumShakeButtonArea = 12500;
         bool checkClickShakePosition = false;
         int clickShakeDelay = 30;
 
+        bool autoBarMinigame = true;
         bool autoCalculateBarWidth = true;
         int barWidth = 0;
         bool useBarDeadZoneLeft = true;
         bool useBarDeadZoneRight = true;
-        double kp = 0.8;
+        double kp = 0.5;
         double kd = 10.0;
+
+        bool autoSell = false;
     } config;
 
     struct
     {
         ImVec2 cameraModePosition{};
 
+        ImRect searchShakeRect{};
+
         ImVec2 barDeadZoneLeftPosition{};
         ImVec2 barDeadZoneRightPosition{};
-
-        ImRect searchShakeRect{};
         ImRect searchBarRect{};
+
+        ImVec2 sellButtonPosition{};
     } coordinates;
 
     struct

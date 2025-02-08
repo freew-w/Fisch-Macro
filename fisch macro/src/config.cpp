@@ -34,17 +34,21 @@ bool Config::loadConfig()
 
         else if (option == "Cast Time")				        config.castTime = std::stoi(value);
 
+        else if (option == "Auto Shake")		            config.autoShake = std::stoi(value);
         else if (option == "Minimum Shake Button Area")		config.minimumShakeButtonArea = std::stoi(value);
         else if (option == "Maximum Shake Button Area")	    config.maximumShakeButtonArea = std::stoi(value);
         else if (option == "Check Click Shake Position")    config.checkClickShakePosition = std::stoi(value);
         else if (option == "Click Shake Delay")			    config.clickShakeDelay = std::stoi(value);
 
+        else if (option == "Auto Bar Minigame")	            config.autoBarMinigame = std::stoi(value);
         else if (option == "Auto Calculate Bar Width")	    config.autoCalculateBarWidth = std::stoi(value);
         else if (option == "Bar Width")			            config.barWidth = std::stoi(value);
         else if (option == "Use Bar Dead Zone Left")	    config.useBarDeadZoneLeft = std::stoi(value);
         else if (option == "Use Bar Dead Zone Right")		config.useBarDeadZoneRight = std::stoi(value);
         else if (option == "Kp")			                config.kp = std::stod(value);
         else if (option == "Kd")				            config.kd = std::stod(value);
+
+        else if (option == "Auto Sell")				        config.autoSell = std::stoi(value);
     }
 
     file.close();
@@ -68,17 +72,21 @@ bool Config::saveConfig()
 
     file << "Cast Time: " << config.castTime << std::endl;
 
+    file << "Auto Shake: " << config.autoShake << std::endl;
     file << "Minimum Shake Button Area: " << config.minimumShakeButtonArea << std::endl;
     file << "Maximum Shake Button Area: " << config.maximumShakeButtonArea << std::endl;
     file << "Check Click Shake Position: " << config.checkClickShakePosition << std::endl;
     file << "Click Shake Delay: " << config.clickShakeDelay << std::endl;
 
+    file << "Auto Bar Minigame: " << config.autoBarMinigame << std::endl;
     file << "Auto Calculate Bar Width: " << config.autoCalculateBarWidth << std::endl;
     file << "Bar Width: " << config.barWidth << std::endl;
     file << "Use Bar Dead Zone Left: " << config.useBarDeadZoneLeft << std::endl;
     file << "Use Bar Dead Zone Right: " << config.useBarDeadZoneRight << std::endl;
     file << "Kp: " << config.kp << std::endl;
     file << "Kd: " << config.kd << std::endl;
+
+    file << "Auto Sell: " << config.autoSell << std::endl;
 
     file.close();
 
@@ -114,7 +122,7 @@ bool Config::validateFiles()
     bool shouldCreateConfigFolder = true;
     bool shouldCreateConfigTXT = true;
     bool shouldCreateCoordinatesTXT = true;
-    bool shouldCreateMacroTXT = true;
+    bool shouldCreateDataTXT = true;
 
     for (const auto& file : std::filesystem::directory_iterator(std::filesystem::current_path()))
     {
@@ -130,8 +138,8 @@ bool Config::validateFiles()
         }
         else if (file.path().filename() == "coordinates.txt")
             shouldCreateCoordinatesTXT = false;
-        else if (file.path().filename() == "macro.txt")
-            shouldCreateMacroTXT = false;
+        else if (file.path().filename() == "data.txt")
+            shouldCreateDataTXT = false;
     }
 
     if (shouldCreateConfigFolder)
@@ -143,7 +151,7 @@ bool Config::validateFiles()
     if (shouldCreateCoordinatesTXT)
         if (!saveCoordinates())
             return false;
-    if (shouldCreateMacroTXT)
+    if (shouldCreateDataTXT)
         if (!saveData())
             return false;
 
@@ -210,23 +218,25 @@ bool Config::loadCoordinates()
         std::string option = line.substr(0, colonPos);
         std::string value = line.substr(colonPos + 2);
 
-        if (option == "Camera Mode Pos X")				coordinates.cameraModePosition.x = std::stoi(value);
-        else if (option == "Camera Mode Pos Y")			coordinates.cameraModePosition.y = std::stoi(value);
+        if (option == "Camera Mode Position X")			coordinates.cameraModePosition.x = std::stof(value);
+        else if (option == "Camera Mode Position Y")	coordinates.cameraModePosition.y = std::stof(value);
 
-        else if (option == "Bar Dead Zone Left X")		coordinates.barDeadZoneLeftPosition.x = std::stoi(value);
-        else if (option == "Bar Dead Zone Left Y")		coordinates.barDeadZoneLeftPosition.y = std::stoi(value);
-        else if (option == "Bar Dead Zone Right X")		coordinates.barDeadZoneRightPosition.x = std::stoi(value);
-        else if (option == "Bar Dead Zone Right Y")		coordinates.barDeadZoneRightPosition.y = std::stoi(value);
+        else if (option == "Bar Dead Zone Left X")		coordinates.barDeadZoneLeftPosition.x = std::stof(value);
+        else if (option == "Bar Dead Zone Left Y")		coordinates.barDeadZoneLeftPosition.y = std::stof(value);
+        else if (option == "Bar Dead Zone Right X")		coordinates.barDeadZoneRightPosition.x = std::stof(value);
+        else if (option == "Bar Dead Zone Right Y")		coordinates.barDeadZoneRightPosition.y = std::stof(value);
 
-        else if (option == "Search Shake Rect Min X")	coordinates.searchShakeRect.Min.x = std::stoi(value);
-        else if (option == "Search Shake Rect Min Y")	coordinates.searchShakeRect.Min.y = std::stoi(value);
-        else if (option == "Search Shake Rect Max X")	coordinates.searchShakeRect.Max.x = std::stoi(value);
-        else if (option == "Search Shake Rect Max Y")	coordinates.searchShakeRect.Max.y = std::stoi(value);
+        else if (option == "Search Shake Rect Min X")	coordinates.searchShakeRect.Min.x = std::stof(value);
+        else if (option == "Search Shake Rect Min Y")	coordinates.searchShakeRect.Min.y = std::stof(value);
+        else if (option == "Search Shake Rect Max X")	coordinates.searchShakeRect.Max.x = std::stof(value);
+        else if (option == "Search Shake Rect Max Y")	coordinates.searchShakeRect.Max.y = std::stof(value);
 
-        else if (option == "Search Bar Rect Min X")		coordinates.searchBarRect.Min.x = std::stoi(value);
-        else if (option == "Search Bar Rect Min Y")		coordinates.searchBarRect.Min.y = std::stoi(value);
-        else if (option == "Search Bar Rect Max X")	    coordinates.searchBarRect.Max.x = std::stoi(value);
-        else if (option == "Search Bar Rect Max Y")     coordinates.searchBarRect.Max.y = std::stoi(value);
+        else if (option == "Search Bar Rect Min X")		coordinates.searchBarRect.Min.x = std::stof(value);
+        else if (option == "Search Bar Rect Min Y")		coordinates.searchBarRect.Min.y = std::stof(value);
+        else if (option == "Search Bar Rect Max X")	    coordinates.searchBarRect.Max.x = std::stof(value);
+        else if (option == "Search Bar Rect Max Y")     coordinates.searchBarRect.Max.y = std::stof(value);
+        else if (option == "Sell Button Position X")	coordinates.sellButtonPosition.x = std::stof(value);
+        else if (option == "Sell Button Position Y")	coordinates.sellButtonPosition.y = std::stof(value);
     }
 
     return true;
@@ -239,23 +249,25 @@ bool Config::saveCoordinates()
     if (!file.is_open())
         return false;
 
-    file << "Camera Mode Pos X: " << coordinates.cameraModePosition.x << std::endl;
-    file << "Camera Mode Pos Y: " << coordinates.cameraModePosition.y << std::endl;
-
-    file << "Bar Dead Zone Left X: " << coordinates.barDeadZoneLeftPosition.x << std::endl;
-    file << "Bar Dead Zone Left Y: " << coordinates.barDeadZoneLeftPosition.y << std::endl;
-    file << "Bar Dead Zone Right X: " << coordinates.barDeadZoneRightPosition.x << std::endl;
-    file << "Bar Dead Zone Right Y: " << coordinates.barDeadZoneRightPosition.y << std::endl;
+    file << "Camera Mode Position X: " << coordinates.cameraModePosition.x << std::endl;
+    file << "Camera Mode Position Y: " << coordinates.cameraModePosition.y << std::endl;
 
     file << "Search Shake Rect Min X: " << coordinates.searchShakeRect.Min.x << std::endl;
     file << "Search Shake Rect Min Y: " << coordinates.searchShakeRect.Min.y << std::endl;
     file << "Search Shake Rect Max X: " << coordinates.searchShakeRect.Max.x << std::endl;
     file << "Search Shake Rect Max Y: " << coordinates.searchShakeRect.Max.y << std::endl;
 
+    file << "Bar Dead Zone Left X: " << coordinates.barDeadZoneLeftPosition.x << std::endl;
+    file << "Bar Dead Zone Left Y: " << coordinates.barDeadZoneLeftPosition.y << std::endl;
+    file << "Bar Dead Zone Right X: " << coordinates.barDeadZoneRightPosition.x << std::endl;
+    file << "Bar Dead Zone Right Y: " << coordinates.barDeadZoneRightPosition.y << std::endl;
     file << "Search Bar Rect Min X: " << coordinates.searchBarRect.Min.x << std::endl;
     file << "Search Bar Rect Min Y: " << coordinates.searchBarRect.Min.y << std::endl;
     file << "Search Bar Rect Max X: " << coordinates.searchBarRect.Max.x << std::endl;
     file << "Search Bar Rect Max Y: " << coordinates.searchBarRect.Max.y << std::endl;
+
+    file << "Sell Button Position X: " << coordinates.sellButtonPosition.x << std::endl;
+    file << "Sell Button Position Y: " << coordinates.sellButtonPosition.y << std::endl;
 
     return true;
 }

@@ -4,6 +4,7 @@ class Gui
 {
 public:
     static Gui& get();
+
     void startRendering();
 
 private:

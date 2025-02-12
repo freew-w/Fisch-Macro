@@ -23,6 +23,7 @@ Download the executable from the [releases](https://github.com/freew-w/Fisch-Mac
 > The macro works best when Roblox is in windowed mode and scaled to the smallest.
 ### Video Tutorial
 https://youtu.be/j7btCmQV9XM
+
 [![Tutorial](https://img.youtube.com/vi/j7btCmQV9XM/0.jpg)](https://youtu.be/j7btCmQV9XM)
 ## FAQ
 - **Is it a virus?**

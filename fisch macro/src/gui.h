@@ -6,7 +6,7 @@ public:
     static Gui& get();
 
     void startRendering();
-
+    
 private:
     bool shouldRender = true;
     HWND hWnd{};
@@ -19,6 +19,8 @@ private:
     ~Gui();
     static LRESULT CALLBACK sWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
     LRESULT WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+    void setRegion(ImRect& rect, bool& shouldShow);
+    void setPosition(ImVec2& pos, bool& shouldShow);
     static void helpMarker(const char* desc);
 };
 

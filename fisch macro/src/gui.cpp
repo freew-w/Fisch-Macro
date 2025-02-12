@@ -91,12 +91,12 @@ void Gui::startRendering()
                         setBarDeadZoneRightPosition{},
                         setSellButtonPosition{};
 
-                    fisch.setPosition(config.coordinates.cameraModePosition, setCameraModePosition);
-                    fisch.setRegion(config.coordinates.searchShakeRect, setShakeButtonSearchingRegion);
-                    fisch.setRegion(config.coordinates.searchBarRect, setBarSearchingRegion);
-                    fisch.setPosition(config.coordinates.barDeadZoneLeftPosition, setBarDeadZoneLeftPosition);
-                    fisch.setPosition(config.coordinates.barDeadZoneRightPosition, setBarDeadZoneRightPosition);
-                    fisch.setPosition(config.coordinates.sellButtonPosition, setSellButtonPosition);
+                    setPosition(config.coordinates.cameraModePosition, setCameraModePosition);
+                    setRegion(config.coordinates.searchShakeRect, setShakeButtonSearchingRegion);
+                    setRegion(config.coordinates.searchBarRect, setBarSearchingRegion);
+                    setPosition(config.coordinates.barDeadZoneLeftPosition, setBarDeadZoneLeftPosition);
+                    setPosition(config.coordinates.barDeadZoneRightPosition, setBarDeadZoneRightPosition);
+                    setPosition(config.coordinates.sellButtonPosition, setSellButtonPosition);
 
                     switch (page)
                     {
@@ -202,7 +202,7 @@ void Gui::startRendering()
                                 ImGui::SameLine();
                                 ImGui::SetNextItemWidth(150);
                                 ImGui::InputDouble("Kd", &config.config.kd, 0.1, 1.0);
-                                ImGui::SameLine();helpMarker("Kp: proportional gain\nKd: derivative gain\nError = line x - arrow x\nDerivative = (error - previous error) / delta time");
+                                ImGui::SameLine();helpMarker("Adjust the proportional and derivative gain of the PD controller.\n\nKp: proportional gain\nKd: derivative gain\nError = line x - arrow x\nDerivative = (error - previous error) / delta time");
 
                                 ImGui::NewLine();
 
@@ -359,6 +359,109 @@ LRESULT Gui::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     }
 
     return DefWindowProcW(hWnd, uMsg, wParam, lParam);
+}
+
+void Gui::setRegion(ImRect& rect, bool& shouldShow)
+{
+    if (!shouldShow)
+        return;
+
+    int id = static_cast<int>(sizeof(rect) + rect.Min.x + rect.Min.y + rect.Max.x + rect.Max.y);
+    static int prevId{};
+    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
+    ImGui::PushID(id);
+    ImGui::Begin("set area", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
+    {
+
+        if (id != prevId)
+        {
+            prevId = id;
+            ImGui::SetWindowPos({ rect.Min.x , rect.Min.y });
+            ImGui::SetWindowSize({ rect.Max.x - rect.Min.x , rect.Max.y - rect.Min.y });
+        }
+
+        if (GetAsyncKeyState(VK_CONTROL) & 0x8000 && GetAsyncKeyState(VK_LBUTTON) & 0x8000)
+        {
+            while (GetAsyncKeyState(VK_LBUTTON) & 0x8000);
+            POINT cursorPoint;
+            GetCursorPos(&cursorPoint);
+            ScreenToClient(fisch.robloxHWnd, &cursorPoint);
+
+            static std::array<ImVec2, 2> points{};
+            for (int i{}; i < points.size(); i++)
+            {
+                if (!points[i].x && !points[i].y)
+                {
+                    points[i].x = static_cast<float>(cursorPoint.x);
+                    points[i].y = static_cast<float>(cursorPoint.y);
+
+                    if (i == 0)
+                        break;
+                    if (i == points.size() - 1)
+                    {
+                        ImGui::SetWindowPos({ std::min(points[0].x, points[1].x), std::min(points[0].y, points[1].y) });
+                        ImGui::SetWindowSize({ std::max(points[0].x, points[1].x) - std::min(points[0].x, points[1].x), std::max(points[0].y, points[1].y) - std::min(points[0].y, points[1].y) });
+                        points = {};
+                    }
+                }
+            }
+        }
+
+        ImGui::SetCursorPos({ ImGui::GetWindowWidth() / 2 - 100, ImGui::GetWindowHeight() / 2 - 40 });
+        if (ImGui::Button("Ok", { 200, 80 }))
+        {
+            rect.Min.x = ImGui::GetWindowPos().x;
+            rect.Min.y = ImGui::GetWindowPos().y;
+            rect.Max.x = ImGui::GetWindowPos().x + ImGui::GetWindowSize().x;
+            rect.Max.y = ImGui::GetWindowPos().y + ImGui::GetWindowSize().y;
+            id = static_cast<int>(sizeof(rect) + rect.Min.x + rect.Min.y + rect.Max.x + rect.Max.y);
+            prevId = id;
+            shouldShow = false;
+        }
+    }
+    ImGui::End();
+    ImGui::PopID();
+    ImGui::PopStyleVar();
+}
+
+void Gui::setPosition(ImVec2& pos, bool& shouldShow)
+{
+    if (!shouldShow)
+        return;
+
+    int id = static_cast<int>(sizeof(pos) + pos.x + pos.y);
+    static int prevId{};
+    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
+    ImGui::PushID(id);
+    ImGui::Begin("set pos", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoResize);
+    {
+        if (id != prevId)
+        {
+            prevId = id;
+            ImGui::SetWindowPos({ pos.x - ImGui::GetWindowSize().x / 2.0f, pos.y - ImGui::GetWindowSize().y / 2.0f });
+        }
+
+        if (GetAsyncKeyState(VK_RBUTTON) & 0x01)
+        {
+            POINT cursorPoint;
+            GetCursorPos(&cursorPoint);
+            ScreenToClient(fisch.robloxHWnd, &cursorPoint);
+
+            ImGui::SetWindowPos({ cursorPoint.x - ImGui::GetWindowSize().x / 2.0f, cursorPoint.y - ImGui::GetWindowSize().y / 2.0f });
+        }
+
+        if (ImGui::Button("Ok"))
+        {
+            pos.x = ImGui::GetWindowPos().x + ImGui::GetWindowSize().x / 2.0f;
+            pos.y = ImGui::GetWindowPos().y + ImGui::GetWindowSize().y / 2.0f;
+            id = static_cast<int>(sizeof(pos) + pos.x + pos.y);
+            prevId = id;
+            shouldShow = false;
+        }
+    }
+    ImGui::End();
+    ImGui::PopID();
+    ImGui::PopStyleVar();
 }
 
 void Gui::helpMarker(const char* desc)

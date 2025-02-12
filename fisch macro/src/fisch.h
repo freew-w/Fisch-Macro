@@ -14,9 +14,6 @@ public:
 
     void startMacro();
 
-    void setRegion(ImRect& rect, bool& shouldShow);
-    void setPosition(ImVec2& pos, bool& shouldShow);
-
 private:
     INPUT mouseMove{ .type = INPUT_MOUSE, .mi{1, 0, 0, MOUSEEVENTF_MOVE, 0, 0} };
     INPUT mouseScroll[2]{ {.type = INPUT_MOUSE, .mi{0, 0, static_cast<DWORD>(WHEEL_DELTA), MOUSEEVENTF_WHEEL, 0, 0}}, {.type = INPUT_MOUSE, .mi{0, 0, static_cast<DWORD>(-WHEEL_DELTA), MOUSEEVENTF_WHEEL, 0, 0}} };

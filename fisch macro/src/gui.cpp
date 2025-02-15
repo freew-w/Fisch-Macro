@@ -1,300 +1,53 @@
 #include "pch.h"
-#include "fisch.h"
 #include "config.h"
+#include "fisch.h"
 #include "gui.h"
+#include "roblox.h"
 
-Gui& Gui::get()
+void Gui::renderFrame()
 {
-    static Gui gui{};
-    return gui;
-}
+    auto [shouldRenderMainUI, shouldRenderInfoUI] = shouldRender();
 
-void Gui::startRendering()
-{
-    ShowWindow(hWnd, SW_SHOWDEFAULT);
-    UpdateWindow(hWnd);
-
-    while (fisch.isRunning)
-    {
-        MSG msg;
-        while (PeekMessageW(&msg, hWnd, 0, 0, PM_REMOVE))
-        {
-            TranslateMessage(&msg);
-            DispatchMessageW(&msg);
-        }
-
-        static bool shouldShowOnNextFocus{};
-        if (GetForegroundWindow() == fisch.robloxHWnd || GetForegroundWindow() == hWnd)
-        {
-            if (GetAsyncKeyState(VK_INSERT) & 0x01)
-            {
-                shouldRender = !shouldRender;
-                if (shouldRender)
-                    SetForegroundWindow(hWnd);
-                else
-                    SetForegroundWindow(fisch.robloxHWnd);
-            }
-            if (shouldShowOnNextFocus)
-            {
-                shouldShowOnNextFocus = false;
-                shouldRender = true;
-            }
-        }
-        else
-        {
-            if (shouldRender)
-                shouldShowOnNextFocus = true;
-            shouldRender = false;
-        }
-        if (shouldRender)
-        {
-            RECT robloxClientRect{};
-            POINT robloxClientToScreenPoint{};
-            GetClientRect(fisch.robloxHWnd, &robloxClientRect);
-            ClientToScreen(fisch.robloxHWnd, &robloxClientToScreenPoint);
-            SetWindowLongPtrW(hWnd, GWL_EXSTYLE, GetWindowLongPtr(hWnd, GWL_EXSTYLE) & ~WS_EX_TRANSPARENT);
-            SetWindowPos(hWnd, HWND_TOPMOST, robloxClientToScreenPoint.x, robloxClientToScreenPoint.y, robloxClientRect.right, robloxClientRect.bottom, SWP_SHOWWINDOW);
-        }
-        else
-            SetWindowLongPtrW(hWnd, GWL_EXSTYLE, GetWindowLongPtr(hWnd, GWL_EXSTYLE) | WS_EX_TRANSPARENT);
-
-        ImGui_ImplDX9_NewFrame();
-        ImGui_ImplWin32_NewFrame();
-        ImGui::NewFrame();
-        if (shouldRender)
-        {
-            ImGui::SetNextWindowSize({ 580, 380 }, ImGuiCond_Once);
-            ImGui::Begin("Fisch Macro v0.2.0 (insert to show/hide)", &fisch.isRunning);
-            {
-                static int page{};
-                ImGui::BeginChild("side bar", ImVec2(100, 0), true);
-                {
-                    if (ImGui::Button("Main", { 85, 30 }))
-                        page = 0;
-                    ImGui::NewLine();
-                    if (ImGui::Button("Misc", { 85, 30 }))
-                        page = 1;
-                    ImGui::NewLine();
-                    if (ImGui::Button("Config", { 85, 30 }))
-                        page = 2;
-                }
-                ImGui::EndChild();
-
-                ImGui::SameLine();
-
-                ImGui::BeginChild("content", ImVec2(0, 0), true);
-                {
-                    static bool setCameraModePosition{},
-                        setShakeButtonSearchingRegion{},
-                        setBarSearchingRegion{},
-                        setBarDeadZoneLeftPosition{},
-                        setBarDeadZoneRightPosition{},
-                        setSellButtonPosition{};
-
-                    setPosition(config.coordinates.cameraModePosition, setCameraModePosition);
-                    setRegion(config.coordinates.searchShakeRect, setShakeButtonSearchingRegion);
-                    setRegion(config.coordinates.searchBarRect, setBarSearchingRegion);
-                    setPosition(config.coordinates.barDeadZoneLeftPosition, setBarDeadZoneLeftPosition);
-                    setPosition(config.coordinates.barDeadZoneRightPosition, setBarDeadZoneRightPosition);
-                    setPosition(config.coordinates.sellButtonPosition, setSellButtonPosition);
-
-                    switch (page)
-                    {
-                    case 0:
-                        ImGui::Text("Macro");
-                        ImGui::Separator();
-                        {
-                            if (ImGui::Checkbox("Enabled(F6)", &fisch.enabled))
-                                shouldRender = false;
-                        }
-
-                        ImGui::Text("Auto Shake");
-                        ImGui::Separator();
-                        {
-                            ImGui::PushID("Auto Shake Enabled");
-                            ImGui::Checkbox("Enabled", &config.config.autoShake);
-                            ImGui::PopID();
-
-                            ImGui::NewLine();
-
-                            if (!config.config.autoShake) ImGui::BeginDisabled();
-                            {
-
-                                ImGui::SetNextItemWidth(100);
-                                ImGui::InputInt("Fail Safe Count", &config.config.failSafeCount);
-                                ImGui::SameLine(); helpMarker("Threshold for fail safe count.\nMacro will restart if the threshold is reached.\n\nFail safe count increases if no shake button/bar/line is found, with a 1 second cooldown.");
-
-                                ImGui::NewLine();
-
-                                ImGui::SetNextItemWidth(100);
-                                ImGui::InputInt("Cast Time", &config.config.castTime);
-                                ImGui::SameLine(); helpMarker("The hold time(ms) for casting the rod.");
-
-                                ImGui::NewLine();
-
-                                ImGui::Checkbox("Auto Enable Camera Mode", &config.config.autoEnableCameraMode);
-                                ImGui::Checkbox("Auto Blur", &config.config.autoBlur);
-                                ImGui::Checkbox("Auto Look Down", &config.config.autoLookDown);
-                                ImGui::Checkbox("Auto Zoom In", &config.config.autoZoomIn);
-
-                                ImGui::NewLine();
-
-                                ImGui::SetNextItemWidth(100);
-                                ImGui::InputInt("Minimum Shake Button Area", &config.config.minimumShakeButtonArea);
-                                ImGui::SetNextItemWidth(100);
-                                ImGui::InputInt("Maximum Shake Button Area", &config.config.maximumShakeButtonArea);
-
-                                ImGui::NewLine();
-
-                                ImGui::Checkbox("Check Click Position", &config.config.checkClickShakePosition);
-                                if (config.config.checkClickShakePosition)
-                                {
-                                    ImGui::SameLine();
-                                    helpMarker("Prevent clicking the same position multiple times by comparing the current position with the last position.\nIf enabled, the click shake delay will be ignored.");
-                                }
-                                else
-                                {
-                                    ImGui::SameLine();
-                                    ImGui::SetNextItemWidth(100);
-                                    ImGui::InputInt("Click Shake Delay", &config.config.clickShakeDelay);
-                                    ImGui::SameLine();
-                                    helpMarker("Prevent clicking the same position multiple times by adding a delay(ms) between each click.");
-                                }
-
-                                ImGui::NewLine();
-
-                                if (ImGui::Button("Set Camera Mode Button Position"))		setCameraModePosition = !setCameraModePosition;
-                                ImGui::SameLine(); helpMarker("Set the position to click to enable camera mode.\n\nMove the box to the desired position by dragging it or right clicking, then click \"Ok\".");
-                                if (ImGui::Button("Set Shake Button Searching Region"))		setShakeButtonSearchingRegion = !setShakeButtonSearchingRegion;
-                                ImGui::SameLine(); helpMarker("Set the region to search for the shake button.\n\nMove the box to the desired region by resizing and dragging it or ctrl + left clicking two opposite corners, then click \"Ok\".");
-                            }
-                            if (!config.config.autoShake) ImGui::EndDisabled();
-                        }
-
-                        ImGui::Text("Auto Bar Minigame");
-                        ImGui::Separator();
-                        {
-                            ImGui::PushID("Auto Bar Minigame Enabled");
-                            ImGui::Checkbox("Enabled", &config.config.autoBarMinigame);
-                            ImGui::PopID();
-
-                            ImGui::NewLine();
-
-                            if (!config.config.autoBarMinigame) ImGui::BeginDisabled();
-                            {
-                                ImGui::Checkbox("Auto Calculate Bar Width", &config.config.autoCalculateBarWidth);
-                                if (!config.config.autoCalculateBarWidth)
-                                {
-                                    ImGui::SameLine();
-                                    ImGui::SetNextItemWidth(100);
-                                    ImGui::InputInt("Bar Width", &config.config.barWidth);
-                                }
-
-                                ImGui::NewLine();
-
-                                ImGui::Checkbox("Use Bar Dead Zone Left", &config.config.useBarDeadZoneLeft);
-                                ImGui::Checkbox("Use Bar Dead Zone Right", &config.config.useBarDeadZoneRight);
-
-                                ImGui::NewLine();
-
-                                ImGui::SetNextItemWidth(150);
-                                ImGui::InputDouble("Kp", &config.config.kp, 0.1, 1.0);
-                                ImGui::SameLine();
-                                ImGui::SetNextItemWidth(150);
-                                ImGui::InputDouble("Kd", &config.config.kd, 0.1, 1.0);
-                                ImGui::SameLine();helpMarker("Adjust the proportional and derivative gain of the PD controller.\n\nKp: proportional gain\nKd: derivative gain\nError = line x - arrow x\nDerivative = (error - previous error) / delta time");
-
-                                ImGui::NewLine();
-
-                                if (ImGui::Button("Set Bar Searching Region"))				setBarSearchingRegion = !setBarSearchingRegion;
-                                ImGui::SameLine(); helpMarker("Set the region to search for the bar.\n\nMove the box to the desired region by resizing and dragging it or ctrl + left clicking two opposite corners, then click \"Ok\".");
-                                if (ImGui::Button("Set Bar Dead Zone Left Position"))		setBarDeadZoneLeftPosition = !setBarDeadZoneLeftPosition;
-                                ImGui::SameLine(); helpMarker("Set the position of the left bar dead zone.\nWhen the line is on the left of this position, the macro will keep moving the bar to the left.\n\nMove the box to the desired position by dragging it or right clicking, then click \"Ok\".");
-                                if (ImGui::Button("Set Bar Dead Zone Right Position"))		setBarDeadZoneRightPosition = !setBarDeadZoneRightPosition;
-                                ImGui::SameLine(); helpMarker("Set the position of the right bar dead zone.\nWhen the line is on the right of this position, the macro will keep moving the bar to the right.\n\nMove the box to the desired position by dragging it or right clicking, then click \"Ok\".");
-                            }
-                            if (!config.config.autoBarMinigame) ImGui::EndDisabled();
-                        }
-
-                        break;
-                    case 1:
-                        ImGui::Checkbox("Auto Sell", &config.config.autoSell);
-                        ImGui::SameLine(); helpMarker("Automatically sell all fish. Requires the \"Sell Anywhere\" gamepass.");
-                        if (ImGui::Button("Set Sell Button Position")) setSellButtonPosition = !setSellButtonPosition;
-                        ImGui::SameLine(); helpMarker("Set the position to click to activate the \"Sell Inventory\" button.\n\nMove the box to the desired position by dragging it or right clicking, then click \"Ok\".");
-
-                        break;
-                    case 2:
-                        static int index = std::find(config.data.configsString.begin(), config.data.configsString.end(), config.data.configTXTname) != config.data.configsString.end()
-                            ? static_cast<int>(std::distance(config.data.configsString.begin(), std::find(config.data.configsString.begin(), config.data.configsString.end(), config.data.configTXTname)))
-                            : 0;
-                        static int prevIndex = index;
-                        ImGui::SetNextItemWidth(ImGui::GetWindowWidth() - 15);
-                        ImGui::ListBox("", &index, config.data.configsCString.get(), static_cast<int>(config.data.configsString.size()));
-                        if (index != prevIndex)
-                        {
-                            prevIndex = index;
-                            config.data.configTXTname = config.data.configsString[index];
-                        }
-
-                        if (ImGui::Button("Refresh")) config.loadData();
-                        ImGui::SameLine();
-                        if (ImGui::Button("Load")) config.loadConfig();
-                        ImGui::SameLine();
-                        if (ImGui::Button("Save")) config.saveConfig();
-
-                        break;
-                    }
-                }
-                ImGui::EndChild();
-            }
-            ImGui::End();
-        }
-        ImGui::EndFrame();
-
-        d3dDevice->Clear(0, nullptr, D3DCLEAR_TARGET, D3DCOLOR_ARGB(0, 0, 0, 0), 1.0f, 0);
-        d3dDevice->BeginScene();
-        ImGui::Render();
-        ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
-        d3dDevice->EndScene();
-        d3dDevice->Present(nullptr, nullptr, nullptr, nullptr);
-    }
+    beginRendering();
+    if (shouldRenderMainUI)
+        renderMainUI();
+    if (shouldRenderInfoUI)
+        renderInfoUI();
+    endRendering();
 }
 
 Gui::Gui()
 {
-    wc.cbClsExtra = 0;
-    wc.cbSize = sizeof(WNDCLASSEX);
-    wc.cbWndExtra = 0;
-    wc.hbrBackground = nullptr;
-    wc.hCursor = nullptr;
-    wc.hIcon = nullptr;
-    wc.hIconSm = nullptr;
-    wc.hInstance = GetModuleHandleW(nullptr);
-    wc.lpfnWndProc = sWndProc;
-    wc.lpszClassName = L"fisch macro";
-    wc.lpszMenuName = nullptr;
-    wc.style = CS_CLASSDC;
-    RegisterClassExW(&wc);
+    wc_.cbClsExtra = 0;
+    wc_.cbSize = sizeof(WNDCLASSEX);
+    wc_.cbWndExtra = 0;
+    wc_.hbrBackground = nullptr;
+    wc_.hCursor = nullptr;
+    wc_.hIcon = nullptr;
+    wc_.hIconSm = nullptr;
+    wc_.hInstance = GetModuleHandleW(nullptr);
+    wc_.lpfnWndProc = sWndProc;
+    wc_.lpszClassName = L"Fisch Macro";
+    wc_.lpszMenuName = nullptr;
+    wc_.style = CS_CLASSDC;
+    RegisterClassExW(&wc_);
 
-    RECT robloxClientRect{};
-    POINT robloxClientToScreenPoint{};
-    GetClientRect(fisch.robloxHWnd, &robloxClientRect);
-    ClientToScreen(fisch.robloxHWnd, &robloxClientToScreenPoint);
-    hWnd = CreateWindowExW(WS_EX_LAYERED | WS_EX_TOPMOST | WS_EX_TOOLWINDOW, wc.lpszClassName, L"fisch macro", WS_POPUP, robloxClientToScreenPoint.x, robloxClientToScreenPoint.y, robloxClientRect.right, robloxClientRect.bottom, nullptr, nullptr, wc.hInstance, this);
-    if (!hWnd)
-        fisch.error(L"Failed to create window");
-    SetLayeredWindowAttributes(hWnd, RGB(0, 0, 0), 255, LWA_ALPHA);
+    POINT robloxWindowPosition = Roblox::getInstance().getRobloxWindowPosition(),
+        robloxWindowSize = Roblox::getInstance().getRobloxWindowSize();
+    hWnd_ = CreateWindowExW(WS_EX_LAYERED | WS_EX_TOPMOST | WS_EX_TOOLWINDOW, wc_.lpszClassName, L"Fisch Macro", WS_POPUP, robloxWindowPosition.x, robloxWindowPosition.y, robloxWindowSize.x, robloxWindowSize.y, nullptr, nullptr, wc_.hInstance, this);
+    if (!hWnd_)
+        throw std::runtime_error("Failed to create window");
+    SetLayeredWindowAttributes(hWnd_, RGB(0, 0, 0), 255, LWA_ALPHA);
     MARGINS margins{ -1, -1, -1, -1 };
-    DwmExtendFrameIntoClientArea(hWnd, &margins);
+    DwmExtendFrameIntoClientArea(hWnd_, &margins);
 
-    d3d = Direct3DCreate9(D3D_SDK_VERSION);
-    d3dpp.Windowed = true;
-    d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
-    d3dpp.BackBufferFormat = D3DFMT_A8R8G8B8;
-    d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
-    if (FAILED(d3d->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hWnd, D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dpp, &d3dDevice)))
-        fisch.error(L"Failed to create d3d device");
+    d3d_ = Direct3DCreate9(D3D_SDK_VERSION);
+    d3dpp_.Windowed = TRUE;
+    d3dpp_.SwapEffect = D3DSWAPEFFECT_DISCARD;
+    d3dpp_.BackBufferFormat = D3DFMT_A8R8G8B8;
+    d3dpp_.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
+    if (FAILED(d3d_->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hWnd_, D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dpp_, &d3dDevice_)))
+        throw std::runtime_error("Failed to create device");
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -303,20 +56,23 @@ Gui::Gui()
 
     ImGui::StyleColorsDark();
 
-    ImGui_ImplWin32_Init(hWnd);
-    ImGui_ImplDX9_Init(d3dDevice);
+    ImGui_ImplWin32_Init(hWnd_);
+    ImGui_ImplDX9_Init(d3dDevice_);
+
+    ShowWindow(hWnd_, SW_SHOWDEFAULT);
+    UpdateWindow(hWnd_);
 }
 
 Gui::~Gui()
 {
-    if (d3dDevice)
-        d3dDevice->Release();
-    if (d3d)
-        d3d->Release();
-    if (hWnd)
-        DestroyWindow(hWnd);
-    if (wc.lpszClassName)
-        UnregisterClass(wc.lpszClassName, wc.hInstance);
+    if (d3dDevice_)
+        d3dDevice_->Release();
+    if (d3d_)
+        d3d_->Release();
+    if (hWnd_)
+        DestroyWindow(hWnd_);
+    if (wc_.lpszClassName)
+        UnregisterClassW(wc_.lpszClassName, wc_.hInstance);
 }
 
 LRESULT Gui::sWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -344,12 +100,12 @@ LRESULT Gui::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     switch (uMsg)
     {
     case WM_SIZE:
-        if (wParam == SIZE_MINIMIZED || !d3dDevice)
+        if (wParam == SIZE_MINIMIZED || !d3dDevice_)
             return 0;
-        d3dpp.BackBufferWidth = static_cast<UINT>(LOWORD(lParam));
-        d3dpp.BackBufferHeight = static_cast<UINT>(HIWORD(lParam));
+        d3dpp_.BackBufferWidth = static_cast<UINT>(LOWORD(lParam));
+        d3dpp_.BackBufferHeight = static_cast<UINT>(HIWORD(lParam));
         ImGui_ImplDX9_InvalidateDeviceObjects();
-        if (d3dDevice->Reset(&d3dpp) == D3DERR_INVALIDCALL)
+        if (d3dDevice_->Reset(&d3dpp_) == D3DERR_INVALIDCALL)
             IM_ASSERT(0);
         ImGui_ImplDX9_CreateDeviceObjects();
         return 0;
@@ -361,12 +117,52 @@ LRESULT Gui::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     return DefWindowProcW(hWnd, uMsg, wParam, lParam);
 }
 
-void Gui::setRegion(ImRect& rect, bool& shouldShow)
+void Gui::positionSetter(Position& position, bool& shouldRender) const
 {
-    if (!shouldShow)
+    if (!shouldRender)
         return;
 
-    int id = static_cast<int>(sizeof(rect) + rect.Min.x + rect.Min.y + rect.Max.x + rect.Max.y);
+    int id = static_cast<int>(sizeof(position) + position.x + position.y);
+    static int prevId{};
+    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
+    ImGui::PushID(id);
+    ImGui::Begin("set position", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoResize);
+    {
+        if (id != prevId)
+        {
+            prevId = id;
+            ImGui::SetWindowPos({ position.x - ImGui::GetWindowSize().x / 2.0f, position.y - ImGui::GetWindowSize().y / 2.0f });
+        }
+
+        if (GetAsyncKeyState(VK_RBUTTON) & 0x01)
+        {
+            POINT cursorPoint;
+            GetCursorPos(&cursorPoint);
+            ScreenToClient(Roblox::getInstance().getRobloxHWnd(), &cursorPoint);
+
+            ImGui::SetWindowPos({ cursorPoint.x - ImGui::GetWindowSize().x / 2.0f, cursorPoint.y - ImGui::GetWindowSize().y / 2.0f });
+        }
+
+        if (ImGui::Button("Ok"))
+        {
+            position.x = ImGui::GetWindowPos().x + ImGui::GetWindowSize().x / 2.0f;
+            position.y = ImGui::GetWindowPos().y + ImGui::GetWindowSize().y / 2.0f;
+            id = static_cast<int>(sizeof(position) + position.x + position.y);
+            prevId = id;
+            shouldRender = false;
+        }
+    }
+    ImGui::End();
+    ImGui::PopID();
+    ImGui::PopStyleVar();
+}
+
+void Gui::regionSetter(Region& region, bool& shouldRender) const
+{
+    if (!shouldRender)
+        return;
+
+    int id = static_cast<int>(sizeof(region) + region.min.x + region.min.y + region.max.x + region.max.y);
     static int prevId{};
     ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
     ImGui::PushID(id);
@@ -376,8 +172,8 @@ void Gui::setRegion(ImRect& rect, bool& shouldShow)
         if (id != prevId)
         {
             prevId = id;
-            ImGui::SetWindowPos({ rect.Min.x , rect.Min.y });
-            ImGui::SetWindowSize({ rect.Max.x - rect.Min.x , rect.Max.y - rect.Min.y });
+            ImGui::SetWindowPos({ static_cast<float>(region.min.x) , static_cast<float>(region.min.y) });
+            ImGui::SetWindowSize({ static_cast<float>(region.max.x - region.min.x) , static_cast<float>(region.max.y - region.min.y) });
         }
 
         if (GetAsyncKeyState(VK_CONTROL) & 0x8000 && GetAsyncKeyState(VK_LBUTTON) & 0x8000)
@@ -385,7 +181,7 @@ void Gui::setRegion(ImRect& rect, bool& shouldShow)
             while (GetAsyncKeyState(VK_LBUTTON) & 0x8000);
             POINT cursorPoint;
             GetCursorPos(&cursorPoint);
-            ScreenToClient(fisch.robloxHWnd, &cursorPoint);
+            ScreenToClient(Roblox::getInstance().getRobloxHWnd(), &cursorPoint);
 
             static std::array<ImVec2, 2> points{};
             for (int i{}; i < points.size(); i++)
@@ -410,13 +206,13 @@ void Gui::setRegion(ImRect& rect, bool& shouldShow)
         ImGui::SetCursorPos({ ImGui::GetWindowWidth() / 2 - 100, ImGui::GetWindowHeight() / 2 - 40 });
         if (ImGui::Button("Ok", { 200, 80 }))
         {
-            rect.Min.x = ImGui::GetWindowPos().x;
-            rect.Min.y = ImGui::GetWindowPos().y;
-            rect.Max.x = ImGui::GetWindowPos().x + ImGui::GetWindowSize().x;
-            rect.Max.y = ImGui::GetWindowPos().y + ImGui::GetWindowSize().y;
-            id = static_cast<int>(sizeof(rect) + rect.Min.x + rect.Min.y + rect.Max.x + rect.Max.y);
+            region.min.x = ImGui::GetWindowPos().x;
+            region.min.y = ImGui::GetWindowPos().y;
+            region.max.x = ImGui::GetWindowPos().x + ImGui::GetWindowSize().x;
+            region.max.y = ImGui::GetWindowPos().y + ImGui::GetWindowSize().y;
+            id = static_cast<int>(sizeof(region) + region.min.x + region.min.y + region.max.x + region.max.y);
             prevId = id;
-            shouldShow = false;
+            shouldRender = false;
         }
     }
     ImGui::End();
@@ -424,47 +220,7 @@ void Gui::setRegion(ImRect& rect, bool& shouldShow)
     ImGui::PopStyleVar();
 }
 
-void Gui::setPosition(ImVec2& pos, bool& shouldShow)
-{
-    if (!shouldShow)
-        return;
-
-    int id = static_cast<int>(sizeof(pos) + pos.x + pos.y);
-    static int prevId{};
-    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
-    ImGui::PushID(id);
-    ImGui::Begin("set pos", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoResize);
-    {
-        if (id != prevId)
-        {
-            prevId = id;
-            ImGui::SetWindowPos({ pos.x - ImGui::GetWindowSize().x / 2.0f, pos.y - ImGui::GetWindowSize().y / 2.0f });
-        }
-
-        if (GetAsyncKeyState(VK_RBUTTON) & 0x01)
-        {
-            POINT cursorPoint;
-            GetCursorPos(&cursorPoint);
-            ScreenToClient(fisch.robloxHWnd, &cursorPoint);
-
-            ImGui::SetWindowPos({ cursorPoint.x - ImGui::GetWindowSize().x / 2.0f, cursorPoint.y - ImGui::GetWindowSize().y / 2.0f });
-        }
-
-        if (ImGui::Button("Ok"))
-        {
-            pos.x = ImGui::GetWindowPos().x + ImGui::GetWindowSize().x / 2.0f;
-            pos.y = ImGui::GetWindowPos().y + ImGui::GetWindowSize().y / 2.0f;
-            id = static_cast<int>(sizeof(pos) + pos.x + pos.y);
-            prevId = id;
-            shouldShow = false;
-        }
-    }
-    ImGui::End();
-    ImGui::PopID();
-    ImGui::PopStyleVar();
-}
-
-void Gui::helpMarker(const char* desc)
+void Gui::helpMarker(const char* desc) const
 {
     ImGui::TextDisabled("(?)");
     if (ImGui::BeginItemTooltip())
@@ -474,4 +230,283 @@ void Gui::helpMarker(const char* desc)
         ImGui::PopTextWrapPos();
         ImGui::EndTooltip();
     }
+}
+
+std::pair<bool, bool> Gui::shouldRender() const
+{
+    static bool shouldRenderMainUI{}, shouldRenderInfoUI{};
+    static bool shouldRenderMainUIOnNextFocus{}, shouldRenderInfoUIOnNextFocus{};
+
+    if (GetForegroundWindow() == Roblox::getInstance().getRobloxHWnd() || GetForegroundWindow() == hWnd_)
+    {
+        if (GetAsyncKeyState(VK_INSERT) & 0x01)
+        {
+            shouldRenderMainUI = !shouldRenderMainUI;
+            if (shouldRenderMainUI)
+                SetForegroundWindow(hWnd_);
+            else
+                SetForegroundWindow(Roblox::getInstance().getRobloxHWnd());
+        }
+        if (shouldRenderMainUIOnNextFocus)
+        {
+            shouldRenderMainUIOnNextFocus = false;
+            shouldRenderMainUI = true;
+        }
+        if (shouldRenderInfoUIOnNextFocus)
+        {
+            shouldRenderInfoUIOnNextFocus = false;
+            shouldRenderInfoUI = true;
+        }
+    }
+    else
+    {
+        if (shouldRenderMainUI)
+            shouldRenderMainUIOnNextFocus = true;
+        if (shouldRenderInfoUI)
+            shouldRenderInfoUIOnNextFocus = true;
+        shouldRenderMainUI = false;
+        shouldRenderInfoUI = false;
+    }
+    if (shouldRenderMainUI)
+    {
+        POINT robloxWindowPosition = Roblox::getInstance().getRobloxWindowPosition(),
+            robloxWindowSize = Roblox::getInstance().getRobloxWindowSize();
+
+        SetWindowLongPtrW(hWnd_, GWL_EXSTYLE, GetWindowLongPtr(hWnd_, GWL_EXSTYLE) & ~WS_EX_TRANSPARENT);
+        SetWindowPos(hWnd_, HWND_TOPMOST, robloxWindowPosition.x, robloxWindowPosition.y, robloxWindowSize.x, robloxWindowSize.y, SWP_SHOWWINDOW);
+    }
+    else
+        SetWindowLongPtrW(hWnd_, GWL_EXSTYLE, GetWindowLongPtr(hWnd_, GWL_EXSTYLE) | WS_EX_TRANSPARENT);
+
+    return { shouldRenderMainUI, shouldRenderInfoUI };
+}
+
+void Gui::beginRendering() const
+{
+    MSG msg;
+    while (PeekMessageW(&msg, hWnd_, 0, 0, PM_REMOVE))
+    {
+        TranslateMessage(&msg);
+        DispatchMessageW(&msg);
+    }
+
+    ImGui_ImplDX9_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+    ImGui::NewFrame();
+}
+
+void Gui::endRendering() const
+{
+    ImGui::EndFrame();
+
+    d3dDevice_->Clear(0, nullptr, D3DCLEAR_TARGET, D3DCOLOR_ARGB(0, 0, 0, 0), 1.0f, 0);
+    d3dDevice_->BeginScene();
+    ImGui::Render();
+    ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
+    d3dDevice_->EndScene();
+    d3dDevice_->Present(nullptr, nullptr, nullptr, nullptr);
+}
+
+void Gui::renderMainUI() const
+{
+    static bool setCameraModePosition{},
+        setShakeButtonSearchingRegion{},
+        setBarSearchingRegion{},
+        setBarDeadZoneLeftPosition{},
+        setBarDeadZoneRightPosition{},
+        setSellButtonPosition{};
+
+    positionSetter(Config::getInstance().getPositions().cameraModePosition, setCameraModePosition);
+    regionSetter(Config::getInstance().getPositions().searchShakeRegion, setShakeButtonSearchingRegion);
+    regionSetter(Config::getInstance().getPositions().searchBarRegion, setBarSearchingRegion);
+    positionSetter(Config::getInstance().getPositions().barDeadZoneLeftPosition, setBarDeadZoneLeftPosition);
+    positionSetter(Config::getInstance().getPositions().barDeadZoneRightPosition, setBarDeadZoneRightPosition);
+    positionSetter(Config::getInstance().getPositions().sellButtonPosition, setSellButtonPosition);
+
+    ImGui::SetNextWindowSize({ 580, 380 }, ImGuiCond_Once);
+    ImGui::Begin("Fisch Macro v0.2.0 (insert to show/hide)", &fisch::isRunning);
+    {
+        static int page{};
+        ImGui::BeginChild("side bar", ImVec2(100, 0), true);
+        {
+            if (ImGui::Button("Main", { 85, 30 }))
+                page = 0;
+            ImGui::NewLine();
+            if (ImGui::Button("Misc", { 85, 30 }))
+                page = 1;
+            ImGui::NewLine();
+            if (ImGui::Button("Config", { 85, 30 }))
+                page = 2;
+        }
+        ImGui::EndChild();
+
+        ImGui::SameLine();
+
+        ImGui::BeginChild("content", ImVec2(0, 0), true);
+        {
+            switch (page)
+            {
+            case 0:
+                ImGui::Text("Macro");
+                ImGui::Separator();
+                {
+                    ImGui::Checkbox("Enabled(F6)", &fisch::enabled);
+                }
+
+                ImGui::Text("Auto Shake");
+                ImGui::Separator();
+                {
+                    ImGui::PushID("Auto Shake Enabled");
+                    ImGui::Checkbox("Enabled", &Config::getInstance().getConfig().autoShake);
+                    ImGui::PopID();
+
+                    ImGui::NewLine();
+
+                    if (!Config::getInstance().getConfig().autoShake) ImGui::BeginDisabled();
+                    {
+
+                        ImGui::SetNextItemWidth(100);
+                        ImGui::InputInt("Fail Safe Count", &Config::getInstance().getConfig().failSafeThreshold);
+                        ImGui::SameLine(); helpMarker("Threshold for fail safe count.\nMacro will restart if the threshold is reached.\n\nFail safe count increases if no shake button/bar/line is found, with a 1 second cooldown.");
+
+                        ImGui::NewLine();
+
+                        ImGui::SetNextItemWidth(100);
+                        ImGui::InputInt("Cast Time", &Config::getInstance().getConfig().castTime);
+                        ImGui::SameLine(); helpMarker("The hold time(ms) for casting the rod.");
+
+                        ImGui::NewLine();
+
+                        ImGui::Checkbox("Auto Enable Camera Mode", &Config::getInstance().getConfig().autoEnableCameraMode);
+                        ImGui::Checkbox("Auto Blur", &Config::getInstance().getConfig().autoBlur);
+                        ImGui::Checkbox("Auto Look Down", &Config::getInstance().getConfig().autoLookDown);
+                        ImGui::Checkbox("Auto Zoom In", &Config::getInstance().getConfig().autoZoomIn);
+
+                        ImGui::NewLine();
+
+                        ImGui::SetNextItemWidth(100);
+                        ImGui::InputInt("Minimum Shake Button Area", &Config::getInstance().getConfig().minimumShakeButtonArea);
+                        ImGui::SetNextItemWidth(100);
+                        ImGui::InputInt("Maximum Shake Button Area", &Config::getInstance().getConfig().maximumShakeButtonArea);
+
+                        ImGui::NewLine();
+
+                        ImGui::Checkbox("Check Click Position", &Config::getInstance().getConfig().checkClickShakePosition);
+                        if (Config::getInstance().getConfig().checkClickShakePosition)
+                        {
+                            ImGui::SameLine();
+                            helpMarker("Prevent clicking the same position multiple times by comparing the current position with the last position.\nIf enabled, the click shake delay will be ignored.");
+                        }
+                        else
+                        {
+                            ImGui::SameLine();
+                            ImGui::SetNextItemWidth(100);
+                            ImGui::InputInt("Click Shake Delay", &Config::getInstance().getConfig().clickShakeDelay);
+                            ImGui::SameLine();
+                            helpMarker("Prevent clicking the same position multiple times by adding a delay(ms) between each click.");
+                        }
+
+                        ImGui::NewLine();
+
+                        if (ImGui::Button("Set Camera Mode Button Position"))		setCameraModePosition = !setCameraModePosition;
+                        ImGui::SameLine(); helpMarker("Set the position to click to enable camera mode.\n\nMove the box to the desired position by dragging it or right clicking, then click \"Ok\".");
+                        if (ImGui::Button("Set Shake Button Searching Region"))		setShakeButtonSearchingRegion = !setShakeButtonSearchingRegion;
+                        ImGui::SameLine(); helpMarker("Set the region to search for the shake button.\n\nMove the box to the desired region by resizing and dragging it or ctrl + left clicking two opposite corners, then click \"Ok\".");
+                    }
+                    if (!Config::getInstance().getConfig().autoShake) ImGui::EndDisabled();
+                }
+
+                ImGui::Text("Auto Bar Minigame");
+                ImGui::Separator();
+                {
+                    ImGui::PushID("Auto Bar Minigame Enabled");
+                    ImGui::Checkbox("Enabled", &Config::getInstance().getConfig().autoBarMinigame);
+                    ImGui::PopID();
+
+                    ImGui::NewLine();
+
+                    if (!Config::getInstance().getConfig().autoBarMinigame) ImGui::BeginDisabled();
+                    {
+                        ImGui::Checkbox("Auto Calculate Bar Width", &Config::getInstance().getConfig().autoCalculateBarWidth);
+                        if (!Config::getInstance().getConfig().autoCalculateBarWidth)
+                        {
+                            ImGui::SameLine();
+                            ImGui::SetNextItemWidth(100);
+                            ImGui::InputInt("Bar Width", &Config::getInstance().getConfig().barWidth);
+                        }
+
+                        ImGui::NewLine();
+
+                        ImGui::Checkbox("Use Bar Dead Zone Left", &Config::getInstance().getConfig().useBarDeadZoneLeft);
+                        ImGui::Checkbox("Use Bar Dead Zone Right", &Config::getInstance().getConfig().useBarDeadZoneRight);
+
+                        ImGui::NewLine();
+
+                        ImGui::SetNextItemWidth(150);
+                        ImGui::InputDouble("Kp", &Config::getInstance().getConfig().kp, 0.1, 1.0);
+                        ImGui::SameLine();
+                        ImGui::SetNextItemWidth(150);
+                        ImGui::InputDouble("Kd", &Config::getInstance().getConfig().kd, 0.1, 1.0);
+                        ImGui::SameLine();helpMarker("Adjust the proportional and derivative gain of the PD controller.\n\nKp: proportional gain\nKd: derivative gain\nError = line x - arrow x\nDerivative = (error - previous error) / delta time");
+
+                        ImGui::NewLine();
+
+                        if (ImGui::Button("Set Bar Searching Region"))				setBarSearchingRegion = !setBarSearchingRegion;
+                        ImGui::SameLine(); helpMarker("Set the region to search for the bar.\n\nMove the box to the desired region by resizing and dragging it or ctrl + left clicking two opposite corners, then click \"Ok\".");
+                        if (ImGui::Button("Set Bar Dead Zone Left Position"))		setBarDeadZoneLeftPosition = !setBarDeadZoneLeftPosition;
+                        ImGui::SameLine(); helpMarker("Set the position of the left bar dead zone.\nWhen the line is on the left of this position, the macro will keep moving the bar to the left.\n\nMove the box to the desired position by dragging it or right clicking, then click \"Ok\".");
+                        if (ImGui::Button("Set Bar Dead Zone Right Position"))		setBarDeadZoneRightPosition = !setBarDeadZoneRightPosition;
+                        ImGui::SameLine(); helpMarker("Set the position of the right bar dead zone.\nWhen the line is on the right of this position, the macro will keep moving the bar to the right.\n\nMove the box to the desired position by dragging it or right clicking, then click \"Ok\".");
+                    }
+                    if (!Config::getInstance().getConfig().autoBarMinigame) ImGui::EndDisabled();
+                }
+
+                break;
+            case 1:
+                ImGui::Text("Auto Sell");
+                ImGui::Separator();
+                {
+                    ImGui::Checkbox("Auto Sell", &Config::getInstance().getConfig().autoSell);
+                    ImGui::SameLine(); helpMarker("Automatically sell all fish. Requires the \"Sell Anywhere\" gamepass.");
+                    if (ImGui::Button("Set Sell Button Position")) setSellButtonPosition = !setSellButtonPosition;
+                    ImGui::SameLine(); helpMarker("Set the position to click to activate the \"Sell Inventory\" button.\n\nMove the box to the desired position by dragging it or right clicking, then click \"Ok\".");
+                }
+
+                ImGui::Text("Info UI");
+                ImGui::Separator();
+                {
+                    ImGui::Checkbox("Show Info UI", &Config::getInstance().getConfig().showInfoUI);
+                    // TODO : add checkboxes for what to show
+                }
+
+                break;
+                //case 2:
+                //    static int index = std::find(config.data.configsString.begin(), config.data.configsString.end(), config.data.configTXTname) != config.data.configsString.end()
+                //        ? static_cast<int>(std::distance(config.data.configsString.begin(), std::find(config.data.configsString.begin(), config.data.configsString.end(), config.data.configTXTname)))
+                //        : 0;
+                //    static int prevIndex = index;
+                //    ImGui::SetNextItemWidth(ImGui::GetWindowWidth() - 15);
+                //    ImGui::ListBox("", &index, config.data.configsCString.get(), static_cast<int>(config.data.configsString.size()));
+                //    if (index != prevIndex)
+                //    {
+                //        prevIndex = index;
+                //        config.data.configTXTname = config.data.configsString[index];
+                //    }
+
+                //    if (ImGui::Button("Refresh")) config.loadData();
+                //    ImGui::SameLine();
+                //    if (ImGui::Button("Load")) config.loadConfig();
+                //    ImGui::SameLine();
+                //    if (ImGui::Button("Save")) config.saveConfig();
+
+                //    break;
+            }
+        }
+        ImGui::EndChild();
+    }
+    ImGui::End();
+}
+
+void Gui::renderInfoUI() const
+{
 }

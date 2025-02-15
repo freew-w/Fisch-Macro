@@ -1,196 +1,19 @@
 #include "pch.h"
-#include "fisch.h"
 #include "config.h"
+#include "fisch.h"
+#include "input.h"
+#include "roblox.h"
 
-Fisch& Fisch::get()
-{
-    static Fisch fisch{};
-    return fisch;
-}
-
-void Fisch::warn(LPCWSTR msg)
-{
-    MessageBoxW(nullptr, msg, L"Error", MB_ICONWARNING);
-}
-
-void Fisch::error(LPCWSTR msg)
-{
-    MessageBoxW(nullptr, msg, L"Error", MB_ICONERROR);
-    exit(EXIT_FAILURE);
-}
-
-void Fisch::startMacro()
-{
-    bool firstRun = true;
-    bool newRun = true;
-
-    while (isRunning)
-    {
-        cv::waitKey(1);
-        if (GetAsyncKeyState(VK_F6) & 0x01) enabled = !enabled;
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-
-        if (!enabled)
-        {
-            firstRun = true;
-            newRun = true;
-            continue;
-        }
-
-        if (firstRun)
-        {
-            firstRun = false;
-            if (config.config.autoEnableCameraMode) toggleCameraMode(config.coordinates.cameraModePosition);
-            if (config.config.autoLookDown) lookDown();
-            if (config.config.autoZoomIn) zoomIn();
-        }
-
-        cv::Rect shakeButtonRect = findShakeButton(screenshot(config.coordinates.searchShakeRect));
-        if (shakeButtonRect.width)
-        {
-            failSafe(true);
-
-            if (!config.config.autoShake)
-                continue;
-
-            clickShakeButton(shakeButtonRect);
-            continue;
-        }
-
-        cv::Mat minigameMat = screenshot(config.coordinates.searchBarRect);
-        auto [lineRect, arrowRect] = findLineAndArrow(minigameMat);
-        if (lineRect.x && arrowRect.width)
-        {
-            failSafe(true);
-
-            if (!config.config.autoBarMinigame)
-                continue;
-
-            if (newRun)
-            {
-                newRun = false;
-                if (config.config.autoCalculateBarWidth)
-                    config.config.barWidth = getBarWidth(minigameMat);
-            }
-
-            doBarMinigame(lineRect, arrowRect);
-            continue;
-        }
-
-        if (failSafe())
-        {
-            newRun = true;
-            if (config.config.autoSell) sell(config.coordinates.sellButtonPosition);
-            if (config.config.autoBlur) blurCamera();
-            if (config.config.autoLookDown) lookDown();
-            castRod();
-        }
-    }
-}
-
-Fisch::Fisch()
-{
-    robloxHWnd = FindWindowW(nullptr, L"Roblox");
-    if (!robloxHWnd)
-        error(L"Roblox not found");
-}
-
-inline void Fisch::toggleCameraMode(const ImVec2& pos)
-{
-    POINT robloxClientToScreenPoint{};
-    ClientToScreen(robloxHWnd, &robloxClientToScreenPoint);
-
-    SetCursorPos(static_cast<int>(robloxClientToScreenPoint.x + pos.x), static_cast<int>(robloxClientToScreenPoint.y + pos.y));
-    SendInput(1, &mouseMove, sizeof(INPUT));
-    SendInput(2, leftMouseClick, sizeof(INPUT));
-}
-
-inline void Fisch::blurCamera()
-{
-    SendInput(2, mClick, sizeof(INPUT));
-}
-
-inline void Fisch::lookDown()
-{
-    RECT robloxClientRect;
-    POINT robloxClientToScreenPoint{};
-    GetClientRect(robloxHWnd, &robloxClientRect);
-    ClientToScreen(robloxHWnd, &robloxClientToScreenPoint);
-
-    SetCursorPos(robloxClientToScreenPoint.x + robloxClientRect.right / 2, robloxClientToScreenPoint.y + robloxClientRect.bottom / 2);
-    SendInput(1, &mouseMove, sizeof(INPUT));
-    SendInput(1, &rightMouseClick[0], sizeof(INPUT));
-    INPUT input{ .type = INPUT_MOUSE, .mi{0, 800 / 50, 0, MOUSEEVENTF_MOVE, 0, 0} };
-    for (int i{}; i < 50; i++) {
-        SendInput(1, &input, sizeof(INPUT));
-        std::this_thread::sleep_for(std::chrono::milliseconds(2));
-    }
-    SendInput(1, &rightMouseClick[1], sizeof(INPUT));
-}
-
-inline void Fisch::zoomIn()
-{
-    RECT robloxClientRect;
-    POINT robloxClientToScreenPoint{};
-    GetClientRect(robloxHWnd, &robloxClientRect);
-    ClientToScreen(robloxHWnd, &robloxClientToScreenPoint);
-
-    SetCursorPos(robloxClientToScreenPoint.x + robloxClientRect.right / 2, robloxClientToScreenPoint.y + robloxClientRect.bottom / 2);
-    for (int i{}; i < 40; i++)
-    {
-        SendInput(1, &mouseScroll[0], sizeof(INPUT));
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    }
-    std::this_thread::sleep_for(std::chrono::milliseconds(20));
-    SendInput(1, &mouseScroll[1], sizeof(INPUT));
-}
-
-inline void Fisch::sell(const ImVec2& pos)
-{
-    POINT robloxClientToScreenPoint{};
-    ClientToScreen(robloxHWnd, &robloxClientToScreenPoint);
-
-
-    if (config.config.autoEnableCameraMode)
-        toggleCameraMode(config.coordinates.cameraModePosition);
-    std::this_thread::sleep_for(std::chrono::milliseconds(200));
-    SendInput(2, graveClick, sizeof(INPUT));
-    std::this_thread::sleep_for(std::chrono::milliseconds(200));
-    SetCursorPos(static_cast<int>(robloxClientToScreenPoint.x + pos.x), static_cast<int>(robloxClientToScreenPoint.y + pos.y));
-    SendInput(1, &mouseMove, sizeof(INPUT));
-    SendInput(2, leftMouseClick, sizeof(INPUT));
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    SendInput(2, graveClick, sizeof(INPUT));
-    if (config.config.autoEnableCameraMode)
-        toggleCameraMode(config.coordinates.cameraModePosition);
-    std::this_thread::sleep_for(std::chrono::milliseconds(200));
-}
-
-inline void Fisch::castRod()
-{
-    RECT robloxClientRect;
-    POINT robloxClientToScreenPoint{};
-    GetClientRect(robloxHWnd, &robloxClientRect);
-    ClientToScreen(robloxHWnd, &robloxClientToScreenPoint);
-
-    SetCursorPos(robloxClientToScreenPoint.x + robloxClientRect.right / 2, robloxClientToScreenPoint.y + robloxClientRect.bottom / 2);
-    SendInput(1, &mouseMove, sizeof(INPUT));
-    SendInput(1, &leftMouseClick[0], sizeof(INPUT));
-    std::this_thread::sleep_for(std::chrono::milliseconds(config.config.castTime));
-    SendInput(1, &leftMouseClick[1], sizeof(INPUT));
-}
-
-inline cv::Mat Fisch::screenshot(const ImRect& rect)
+cv::Mat fisch::screenshot(const Region& region)
 {
     static HDC hScreenDC = GetDC(nullptr);
     static HDC hMemDC = CreateCompatibleDC(hScreenDC);
     static HBITMAP hBitmap{};
     static int prevW{}, prevH{};
 
-    POINT robloxClientToScreenPoint{};
-    ClientToScreen(robloxHWnd, &robloxClientToScreenPoint);
-    int w = static_cast<int>(rect.Max.x - rect.Min.x);
-    int h = static_cast<int>(rect.Max.y - rect.Min.y);
+    POINT robloxWindowPosition = Roblox::getInstance().getRobloxWindowPosition();
+    int w = region.max.x - region.min.x;
+    int h = region.max.y - region.min.y;
 
     if (prevW != w || prevH != h)
     {
@@ -202,7 +25,7 @@ inline cv::Mat Fisch::screenshot(const ImRect& rect)
     }
 
     HGDIOBJ hOldBitmap = SelectObject(hMemDC, hBitmap);
-    BitBlt(hMemDC, 0, 0, w, h, hScreenDC, static_cast<int>(robloxClientToScreenPoint.x + rect.Min.x), static_cast<int>(robloxClientToScreenPoint.y + rect.Min.y), SRCCOPY);
+    BitBlt(hMemDC, 0, 0, w, h, hScreenDC, robloxWindowPosition.x + region.min.x, robloxWindowPosition.y + region.min.y, SRCCOPY);
 
     cv::Mat mat(h, w, CV_8UC4);
     BITMAPINFOHEADER bih = { sizeof(BITMAPINFOHEADER), w, -h, 1, 32, BI_RGB };
@@ -212,7 +35,82 @@ inline cv::Mat Fisch::screenshot(const ImRect& rect)
     return mat;
 }
 
-inline cv::Rect Fisch::findShakeButton(cv::Mat mat)
+void fisch::toggleCameraMode()
+{
+    POINT robloxWindowPosition = Roblox::getInstance().getRobloxWindowPosition();
+
+    input::moveMouse(robloxWindowPosition.x + Config::getInstance().getPositions().cameraModePosition.x, robloxWindowPosition.y + Config::getInstance().getPositions().cameraModePosition.y);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    input::clickMouse(input::MouseButton::left);
+}
+
+void fisch::toggleCameraBlur()
+{
+    input::clickKey(0x4d);
+}
+
+void fisch::lookDown()
+{
+    POINT robloxWindowPosition = Roblox::getInstance().getRobloxWindowPosition(),
+        robloxWindowSize = Roblox::getInstance().getRobloxWindowSize();
+
+    input::moveMouse(robloxWindowPosition.x + robloxWindowSize.x / 2, robloxWindowPosition.y + robloxWindowSize.y / 2);
+    input::pressMouse(input::MouseButton::right);
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    for (int i{}; i < 50; i++)
+    {
+        input::moveMouse(0, 100, false);
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+    input::releaseMouse(input::MouseButton::right);
+}
+
+void fisch::zoomIn()
+{
+    POINT robloxWindowPosition = Roblox::getInstance().getRobloxWindowPosition(),
+        robloxWindowSize = Roblox::getInstance().getRobloxWindowSize();
+
+    input::moveMouse(robloxWindowPosition.x + robloxWindowSize.x / 2, robloxWindowPosition.y + robloxWindowSize.y / 2);
+    for (int i{}; i < 50; i++)
+    {
+        input::rotateMouseWheel(WHEEL_DELTA);
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    input::rotateMouseWheel(-WHEEL_DELTA);
+}
+
+void fisch::sell()
+{
+    POINT robloxWindowPosition = Roblox::getInstance().getRobloxWindowPosition();
+
+    if (Config::getInstance().getConfig().autoEnableCameraMode)
+        toggleCameraMode();
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    input::clickKey(VK_OEM_3);
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    input::moveMouse(robloxWindowPosition.x + Config::getInstance().getPositions().sellButtonPosition.x, robloxWindowPosition.y + Config::getInstance().getPositions().sellButtonPosition.y);
+    input::clickMouse(input::MouseButton::left);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    input::clickKey(VK_OEM_3);
+    if (Config::getInstance().getConfig().autoEnableCameraMode)
+        toggleCameraMode();
+}
+
+void fisch::castRod()
+{
+    POINT robloxWindowPosition = Roblox::getInstance().getRobloxWindowPosition(),
+        robloxWindowSize = Roblox::getInstance().getRobloxWindowSize();
+
+    input::clickMouse(input::MouseButton::left);
+    std::this_thread::sleep_for(std::chrono::milliseconds(150));
+    input::moveMouse(robloxWindowPosition.x + robloxWindowSize.x / 2, robloxWindowPosition.y + robloxWindowSize.y / 2);
+    input::pressMouse(input::MouseButton::left);
+    std::this_thread::sleep_for(std::chrono::milliseconds(Config::getInstance().getConfig().castTime));
+    input::releaseMouse(input::MouseButton::left);
+}
+
+cv::Rect fisch::findShakeButton(cv::Mat mat)
 {
     cv::cvtColor(mat, mat, cv::COLOR_RGBA2GRAY);
     cv::dilate(mat, mat, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)));
@@ -223,22 +121,22 @@ inline cv::Rect Fisch::findShakeButton(cv::Mat mat)
     for (auto& contour : contours)
     {
         double area = cv::contourArea(contour);
-        if (area < config.config.minimumShakeButtonArea || area > config.config.maximumShakeButtonArea || contour.size() < 100)
+        if (area < Config::getInstance().getConfig().minimumShakeButtonArea || area > Config::getInstance().getConfig().maximumShakeButtonArea || contour.size() < 100)
             continue;
         cv::approxPolyDP(contour, contour, 0.05 * cv::arcLength(contour, true), true);
 
         RECT robloxClientRect;
-        GetClientRect(robloxHWnd, &robloxClientRect);
+        GetClientRect(Roblox::getInstance().getRobloxHWnd(), &robloxClientRect);
         cv::Rect rect = cv::boundingRect(contour);
-        rect.x += static_cast<int>(config.coordinates.searchShakeRect.Min.x - robloxClientRect.left);
-        rect.y += static_cast<int>(config.coordinates.searchShakeRect.Min.y - robloxClientRect.top);
+        rect.x += Config::getInstance().getPositions().searchShakeRegion.min.x - robloxClientRect.left;
+        rect.y += Config::getInstance().getPositions().searchShakeRegion.min.y - robloxClientRect.top;
         return rect;
     }
 
     return cv::Rect();
 }
 
-inline int Fisch::getBarWidth(cv::Mat mat)
+int fisch::getBarWidth(cv::Mat mat)
 {
     cv::cvtColor(mat, mat, cv::COLOR_RGBA2GRAY);
     cv::morphologyEx(mat, mat, cv::MORPH_OPEN, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)));
@@ -272,12 +170,11 @@ inline int Fisch::getBarWidth(cv::Mat mat)
     return xMax - xMin;
 }
 
-inline std::pair<cv::Rect, cv::Rect> Fisch::findLineAndArrow(cv::Mat mat)
+std::pair<cv::Rect, cv::Rect> fisch::findLineAndArrow(cv::Mat mat)
 {
-    RECT robloxClientRect;
-    GetClientRect(robloxHWnd, &robloxClientRect);
-    int offsetX = static_cast<int>(config.coordinates.searchBarRect.Min.x - robloxClientRect.left);
-    int offsetY = static_cast<int>(config.coordinates.searchBarRect.Min.y - robloxClientRect.top);
+    POINT robloxWindowSize = Roblox::getInstance().getRobloxWindowSize();
+    int offsetX = Config::getInstance().getPositions().searchBarRegion.min.x;
+    int offsetY = Config::getInstance().getPositions().searchBarRegion.min.y;
 
     cv::cvtColor(mat, mat, cv::COLOR_BGR2HSV);
 
@@ -316,34 +213,31 @@ inline std::pair<cv::Rect, cv::Rect> Fisch::findLineAndArrow(cv::Mat mat)
     return { lineRect, arrowRect };
 }
 
-inline void Fisch::clickShakeButton(const cv::Rect& rect)
+void fisch::clickShakeButton(const cv::Rect& rect)
 {
-    POINT robloxClientToScreenPoint{};
-    ClientToScreen(robloxHWnd, &robloxClientToScreenPoint);
+    POINT robloxWindowPosition = Roblox::getInstance().getRobloxWindowPosition();
 
-    if (!config.config.checkClickShakePosition)
+    if (!Config::getInstance().getConfig().checkClickShakePosition)
     {
-        SetCursorPos(robloxClientToScreenPoint.x + rect.x + rect.width / 2, robloxClientToScreenPoint.y + rect.y + rect.height / 2);
-        SendInput(1, &mouseMove, sizeof(INPUT));
-        SendInput(2, leftMouseClick, sizeof(INPUT));
-        std::this_thread::sleep_for(std::chrono::milliseconds(config.config.clickShakeDelay));
+        input::moveMouse(robloxWindowPosition.x + rect.x + rect.width / 2, robloxWindowPosition.y + rect.y + rect.height / 2);
+        input::clickMouse(input::MouseButton::left);
+        std::this_thread::sleep_for(std::chrono::milliseconds(Config::getInstance().getConfig().clickShakeDelay));
         return;
     }
 
     int posX = rect.x + rect.width / 2;
     int posY = rect.y + rect.height / 2;
     static int lastPosX{}, lastPosY{};
-    if (abs(lastPosX - posX) <= 10 && abs(lastPosY - posY) <= 10)
+    if (abs(lastPosX - posX) <= 5 && abs(lastPosY - posY) <= 5)
         return;
     lastPosX = posX;
     lastPosY = posY;
 
-    SetCursorPos(robloxClientToScreenPoint.x + posX, robloxClientToScreenPoint.y + posY);
-    SendInput(1, &mouseMove, sizeof(INPUT));
-    SendInput(2, leftMouseClick, sizeof(INPUT));
+    input::moveMouse(robloxWindowPosition.x + posX, robloxWindowPosition.y + posY);
+    input::clickMouse(input::MouseButton::left);
 }
 
-inline void Fisch::doBarMinigame(const cv::Rect& lineRect, const cv::Rect& arrowRect)
+void fisch::doBarMinigame(const cv::Rect& lineRect, const cv::Rect& arrowRect)
 {
     static auto lastLoopTime = std::chrono::steady_clock::now();
 
@@ -354,25 +248,25 @@ inline void Fisch::doBarMinigame(const cv::Rect& lineRect, const cv::Rect& arrow
 
     double error = lineRect.x - arrowRect.x;
     double derivative = (error - prevError) / deltaTime;
-    int output = static_cast<int>(config.config.kp * error + config.config.kd * derivative);
-    output = std::clamp(output, -config.config.barWidth / 2, config.config.barWidth / 2);
+    int output = static_cast<int>(Config::getInstance().getConfig().kp * error + Config::getInstance().getConfig().kd * derivative);
+    output = std::clamp(output, -Config::getInstance().getConfig().barWidth / 2, Config::getInstance().getConfig().barWidth / 2);
 
-    if (config.config.useBarDeadZoneLeft && lineRect.x < config.coordinates.barDeadZoneLeftPosition.x)
+    if (Config::getInstance().getConfig().useBarDeadZoneLeft && lineRect.x < Config::getInstance().getPositions().barDeadZoneLeftPosition.x)
     {
-        SendInput(1, &fisch.leftMouseClick[1], sizeof(INPUT));
+        input::releaseMouse(input::MouseButton::left);
         return;
     }
-    else if (config.config.useBarDeadZoneRight && lineRect.x > config.coordinates.barDeadZoneRightPosition.x)
+    else if (Config::getInstance().getConfig().useBarDeadZoneRight && lineRect.x > Config::getInstance().getPositions().barDeadZoneRightPosition.x)
     {
-        SendInput(1, &fisch.leftMouseClick[0], sizeof(INPUT));
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        input::pressMouse(input::MouseButton::left);
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
         return;
     }
 
     if (output > 0)
-        SendInput(1, &leftMouseClick[0], sizeof(INPUT));
+        input::pressMouse(input::MouseButton::left);
     else
-        SendInput(1, &leftMouseClick[1], sizeof(INPUT));
+        input::releaseMouse(input::MouseButton::left);
 
     std::this_thread::sleep_for(std::chrono::milliseconds(abs(output)));
 
@@ -380,12 +274,11 @@ inline void Fisch::doBarMinigame(const cv::Rect& lineRect, const cv::Rect& arrow
     lastLoopTime = currentTime;
 }
 
-inline bool Fisch::failSafe(bool reset)
+bool fisch::failSafe(bool reset)
 {
-    static int failSafe{};
     if (reset)
     {
-        failSafe = 0;
+        failSafeCount = 0;
         return false;
     }
 
@@ -394,13 +287,13 @@ inline bool Fisch::failSafe(bool reset)
 
     if (std::chrono::duration_cast<std::chrono::seconds>(currentTime - lastIncrementTime).count() >= 1)
     {
-        failSafe++;
+        failSafeCount++;
         lastIncrementTime = currentTime;
     }
 
-    if (failSafe >= config.config.failSafeCount)
+    if (failSafeCount >= Config::getInstance().getConfig().failSafeThreshold)
     {
-        failSafe = 0;
+        failSafeCount = 0;
         return true;
     }
     return false;

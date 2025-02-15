@@ -2,10 +2,28 @@
 
 class Config
 {
-public:
-    struct
+private:
+    struct Data
     {
-        int failSafeCount = 2;
+        std::string config = "config.txt";
+    };
+
+    struct Positions
+    {
+        Position cameraModePosition{};
+
+        Region searchShakeRegion{};
+
+        Region searchBarRegion{};
+        Position barDeadZoneLeftPosition{};
+        Position barDeadZoneRightPosition{};
+
+        Position sellButtonPosition{};
+    };
+
+    struct Options
+    {
+        int failSafeThreshold = 2;
 
         bool autoEnableCameraMode = true;
         bool autoBlur = true;
@@ -28,45 +46,35 @@ public:
         double kd = 10.0;
 
         bool autoSell = false;
-    } config;
+        bool showInfoUI = true;
+    };
 
-    struct
-    {
-        ImVec2 cameraModePosition{};
+public:
+    inline static Config& getInstance() { static Config config{}; return config; }
 
-        ImRect searchShakeRect{};
-
-        ImVec2 barDeadZoneLeftPosition{};
-        ImVec2 barDeadZoneRightPosition{};
-        ImRect searchBarRect{};
-
-        ImVec2 sellButtonPosition{};
-    } coordinates;
-
-    struct
-    {
-        std::string configTXTname = "config.txt";
-        std::vector<std::string> configsString{};
-        std::unique_ptr<const char* []> configsCString;
-    } data;
-
-    static Config& get();
-
-    bool loadData();
-    bool loadConfig();
-    bool saveConfig();
+    inline const Data& getData() const { return data_; }
+    inline Positions& getPositions() { return positions_; }
+    inline const Positions& getPositions() const { return positions_; }
+    inline Options& getConfig() { return config_; }
+    inline const Options& getConfig() const { return config_; }
 
 private:
-    std::filesystem::path configFolderPath = std::filesystem::current_path() / "configs/";
-    std::filesystem::path coordinatesTXTPath = std::filesystem::current_path() / "coordinates.txt";
-    std::filesystem::path dataTXTPath = std::filesystem::current_path() / "data.txt";
+    const std::filesystem::path dataPath_ = std::filesystem::current_path() / "data.txt";
+    const std::filesystem::path positionsPath_ = std::filesystem::current_path() / "positions.txt";
+    const std::filesystem::path configFolderPath_ = std::filesystem::current_path() / "configs/";
+
+    Data data_{};
+    Positions positions_{};
+    Options config_{};
 
     Config();
     ~Config();
-    bool validateFiles();
-    bool saveData();
-    bool loadCoordinates();
-    bool saveCoordinates();
-};
 
-inline Config& config = Config::get();
+    bool validateFiles() const;
+    bool saveData() const;
+    bool loadData();
+    bool savePositions() const;
+    bool loadPositions();
+    bool saveConfig() const;
+    bool loadConfig();
+};

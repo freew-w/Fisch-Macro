@@ -102,8 +102,6 @@ void fisch::castRod()
     POINT robloxWindowPosition = Roblox::getInstance().getRobloxWindowPosition(),
         robloxWindowSize = Roblox::getInstance().getRobloxWindowSize();
 
-    input::clickMouse(input::MouseButton::left);
-    std::this_thread::sleep_for(std::chrono::milliseconds(150));
     input::moveMouse(robloxWindowPosition.x + robloxWindowSize.x / 2, robloxWindowPosition.y + robloxWindowSize.y / 2);
     input::pressMouse(input::MouseButton::left);
     std::this_thread::sleep_for(std::chrono::milliseconds(Config::getInstance().getConfig().castTime));
@@ -248,7 +246,7 @@ void fisch::doBarMinigame(const cv::Rect& lineRect, const cv::Rect& arrowRect)
 
     double error = lineRect.x - arrowRect.x;
     double derivative = (error - prevError) / deltaTime;
-    int output = static_cast<int>(Config::getInstance().getConfig().kp * error + Config::getInstance().getConfig().kd * derivative);
+    output = static_cast<int>(Config::getInstance().getConfig().kp * error + Config::getInstance().getConfig().kd * derivative);
     output = std::clamp(output, -Config::getInstance().getConfig().barWidth / 2, Config::getInstance().getConfig().barWidth / 2);
 
     if (Config::getInstance().getConfig().useBarDeadZoneLeft && lineRect.x < Config::getInstance().getPositions().barDeadZoneLeftPosition.x)

@@ -1,6 +1,61 @@
 #include "pch.h"
 #include "config.h"
 
+std::pair<int, const char**> Config::getConfigs()
+{
+    if (!configs_.empty())
+        configs_.clear();
+
+    for (const auto& file : std::filesystem::directory_iterator(configFolderPath_))
+        if (file.is_regular_file())
+            configs_.emplace_back(file.path().filename().string());
+
+    configsPtr_ = std::make_unique<const char* []>(configs_.size());
+    std::transform(configs_.begin(), configs_.end(), configsPtr_.get(), [](const std::string& str) { return str.c_str(); });
+
+    return { configs_.size(), configsPtr_.get() };
+}
+
+int& Config::getSelectedConfigIndex()
+{
+    if (selectedConfigIndex_ == -1)
+    {
+        auto it = std::find(configs_.begin(), configs_.end(), data_.config);
+        if (it != configs_.end())
+            selectedConfigIndex_ = std::distance(configs_.begin(), it);
+    }
+
+    return selectedConfigIndex_;
+}
+
+bool Config::userSave()
+{
+    data_.config = configs_[selectedConfigIndex_];
+
+    if (!saveData())
+        return false;
+    if (!savePositions())
+        return false;
+    if (!saveConfig())
+        return false;
+
+    return true;
+}
+
+bool Config::userLoad()
+{
+    data_.config = configs_[selectedConfigIndex_];
+
+    if (!saveData())
+        return false;
+    if (!loadPositions())
+        return false;
+    if (!loadConfig())
+        return false;
+
+    return true;
+}
+
 Config::Config()
 {
     if (!validateFiles())
@@ -89,14 +144,6 @@ bool Config::loadData()
 
         if (option == "Config")					data_.config = value;
     }
-
-    //if (!data.configsString.empty())
-    //    data.configsString.clear();
-    //for (const auto& file : std::filesystem::directory_iterator(configFolderPath))
-    //    data.configsString.emplace_back(file.path().filename().string());
-
-    //data.configsCString = std::make_unique<const char* []>(data.configsString.size());
-    //std::transform(data.configsString.begin(), data.configsString.end(), data.configsCString.get(), [](const std::string& str) { return str.c_str(); });
 
     return true;
 }
@@ -204,6 +251,9 @@ bool Config::saveConfig() const
 
     file << "Auto Sell: " << config_.autoSell << std::endl;
     file << "Show Info UI: " << config_.showInfoUI << std::endl;
+    file << "Show Run Time: " << config_.showRunTime << std::endl;
+    file << "Show Fail Safe Count: " << config_.showFailSafeCount << std::endl;
+    file << "Show Bar Minigame Hold Duration: " << config_.showBarMinigameHoldDuration << std::endl;
 
     file.close();
 
@@ -227,31 +277,34 @@ bool Config::loadConfig()
         std::string option = line.substr(0, colonPos);
         std::string value = line.substr(colonPos + 2);
 
-        if (option == "Fail Safe Threshold")		        config_.failSafeThreshold = std::stoi(value);
+        if (option == "Fail Safe Threshold")                        config_.failSafeThreshold = std::stoi(value);
 
-        else if (option == "Auto Enable Camera Mode")	    config_.autoEnableCameraMode = std::stoi(value);
-        else if (option == "Auto Blur")					    config_.autoBlur = std::stoi(value);
-        else if (option == "Auto Look Down")			    config_.autoLookDown = std::stoi(value);
-        else if (option == "Auto Zoom In")				    config_.autoZoomIn = std::stoi(value);
+        else if (option == "Auto Enable Camera Mode")               config_.autoEnableCameraMode = std::stoi(value);
+        else if (option == "Auto Blur")                             config_.autoBlur = std::stoi(value);
+        else if (option == "Auto Look Down")                        config_.autoLookDown = std::stoi(value);
+        else if (option == "Auto Zoom In")                          config_.autoZoomIn = std::stoi(value);
 
-        else if (option == "Cast Time")				        config_.castTime = std::stoi(value);
+        else if (option == "Cast Time")                             config_.castTime = std::stoi(value);
 
-        else if (option == "Auto Shake")		            config_.autoShake = std::stoi(value);
-        else if (option == "Minimum Shake Button Area")		config_.minimumShakeButtonArea = std::stoi(value);
-        else if (option == "Maximum Shake Button Area")	    config_.maximumShakeButtonArea = std::stoi(value);
-        else if (option == "Check Click Shake Position")    config_.checkClickShakePosition = std::stoi(value);
-        else if (option == "Click Shake Delay")			    config_.clickShakeDelay = std::stoi(value);
+        else if (option == "Auto Shake")                            config_.autoShake = std::stoi(value);
+        else if (option == "Minimum Shake Button Area")             config_.minimumShakeButtonArea = std::stoi(value);
+        else if (option == "Maximum Shake Button Area")             config_.maximumShakeButtonArea = std::stoi(value);
+        else if (option == "Check Click Shake Position")            config_.checkClickShakePosition = std::stoi(value);
+        else if (option == "Click Shake Delay")                     config_.clickShakeDelay = std::stoi(value);
 
-        else if (option == "Auto Bar Minigame")	            config_.autoBarMinigame = std::stoi(value);
-        else if (option == "Auto Calculate Bar Width")	    config_.autoCalculateBarWidth = std::stoi(value);
-        else if (option == "Bar Width")			            config_.barWidth = std::stoi(value);
-        else if (option == "Use Bar Dead Zone Left")	    config_.useBarDeadZoneLeft = std::stoi(value);
-        else if (option == "Use Bar Dead Zone Right")		config_.useBarDeadZoneRight = std::stoi(value);
-        else if (option == "Kp")			                config_.kp = std::stod(value);
-        else if (option == "Kd")				            config_.kd = std::stod(value);
+        else if (option == "Auto Bar Minigame")                     config_.autoBarMinigame = std::stoi(value);
+        else if (option == "Auto Calculate Bar Width")              config_.autoCalculateBarWidth = std::stoi(value);
+        else if (option == "Bar Width")                             config_.barWidth = std::stoi(value);
+        else if (option == "Use Bar Dead Zone Left")                config_.useBarDeadZoneLeft = std::stoi(value);
+        else if (option == "Use Bar Dead Zone Right")               config_.useBarDeadZoneRight = std::stoi(value);
+        else if (option == "Kp")                                    config_.kp = std::stod(value);
+        else if (option == "Kd")                                    config_.kd = std::stod(value);
 
-        else if (option == "Auto Sell")				        config_.autoSell = std::stoi(value);
-        else if (option == "Show Info UI")		            config_.showInfoUI = std::stoi(value);
+        else if (option == "Auto Sell")                             config_.autoSell = std::stoi(value);
+        else if (option == "Show Info UI")                          config_.showInfoUI = std::stoi(value);
+        else if (option == "Show Run Time")                         config_.showRunTime = std::stoi(value);
+        else if (option == "Show Fail Safe Count")                  config_.showFailSafeCount = std::stoi(value);
+        else if (option == "Show Bar Minigame Hold Duration")       config_.showBarMinigameHoldDuration = std::stoi(value);
     }
 
     file.close();

@@ -47,6 +47,9 @@ private:
 
         bool autoSell = false;
         bool showInfoUI = true;
+        bool showRunTime = true;
+        bool showFailSafeCount = true;
+        bool showBarMinigameHoldDuration = true;
     };
 
 public:
@@ -57,11 +60,20 @@ public:
     inline const Positions& getPositions() const { return positions_; }
     inline Options& getConfig() { return config_; }
     inline const Options& getConfig() const { return config_; }
+    std::pair<int, const char**> getConfigs();
+    int& getSelectedConfigIndex();
+
+    bool userSave();
+    bool userLoad();
 
 private:
     const std::filesystem::path dataPath_ = std::filesystem::current_path() / "data.txt";
     const std::filesystem::path positionsPath_ = std::filesystem::current_path() / "positions.txt";
     const std::filesystem::path configFolderPath_ = std::filesystem::current_path() / "configs/";
+
+    std::vector<std::string> configs_{};
+    std::unique_ptr<const char* []> configsPtr_{};
+    int selectedConfigIndex_ = -1;
 
     Data data_{};
     Positions positions_{};

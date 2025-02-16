@@ -4,7 +4,10 @@ namespace fisch
 {
     inline bool isRunning = true;
     inline bool enabled{};
+
+    inline int runTimeHours{}, runTimeMinutes{}, runTimeSeconds{};
     inline int failSafeCount{};
+    inline int output{};
 
     cv::Mat screenshot(const Region& region);
 

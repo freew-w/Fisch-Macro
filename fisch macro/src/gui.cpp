@@ -11,7 +11,7 @@ void Gui::renderFrame()
     beginRendering();
     if (shouldRenderMainUI)
         renderMainUI();
-    if (shouldRenderInfoUI)
+    if (shouldRenderInfoUI && Config::getInstance().getConfig().showInfoUI)
         renderInfoUI();
     endRendering();
 }
@@ -122,7 +122,7 @@ void Gui::positionSetter(Position& position, bool& shouldRender) const
     if (!shouldRender)
         return;
 
-    int id = static_cast<int>(sizeof(position) + position.x + position.y);
+    int id = sizeof(position) + position.x + position.y;
     static int prevId{};
     ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
     ImGui::PushID(id);
@@ -147,7 +147,7 @@ void Gui::positionSetter(Position& position, bool& shouldRender) const
         {
             position.x = ImGui::GetWindowPos().x + ImGui::GetWindowSize().x / 2.0f;
             position.y = ImGui::GetWindowPos().y + ImGui::GetWindowSize().y / 2.0f;
-            id = static_cast<int>(sizeof(position) + position.x + position.y);
+            id = sizeof(position) + position.x + position.y;
             prevId = id;
             shouldRender = false;
         }
@@ -162,7 +162,7 @@ void Gui::regionSetter(Region& region, bool& shouldRender) const
     if (!shouldRender)
         return;
 
-    int id = static_cast<int>(sizeof(region) + region.min.x + region.min.y + region.max.x + region.max.y);
+    int id = sizeof(region) + region.min.x + region.min.y + region.max.x + region.max.y;
     static int prevId{};
     ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
     ImGui::PushID(id);
@@ -183,20 +183,20 @@ void Gui::regionSetter(Region& region, bool& shouldRender) const
             GetCursorPos(&cursorPoint);
             ScreenToClient(Roblox::getInstance().getRobloxHWnd(), &cursorPoint);
 
-            static std::array<ImVec2, 2> points{};
+            static std::array<Position, 2> points{};
             for (int i{}; i < points.size(); i++)
             {
                 if (!points[i].x && !points[i].y)
                 {
-                    points[i].x = static_cast<float>(cursorPoint.x);
-                    points[i].y = static_cast<float>(cursorPoint.y);
+                    points[i].x = cursorPoint.x;
+                    points[i].y = cursorPoint.y;
 
                     if (i == 0)
                         break;
                     if (i == points.size() - 1)
                     {
-                        ImGui::SetWindowPos({ std::min(points[0].x, points[1].x), std::min(points[0].y, points[1].y) });
-                        ImGui::SetWindowSize({ std::max(points[0].x, points[1].x) - std::min(points[0].x, points[1].x), std::max(points[0].y, points[1].y) - std::min(points[0].y, points[1].y) });
+                        ImGui::SetWindowPos({ static_cast<float>(std::min(points[0].x, points[1].x)), static_cast<float>(std::min(points[0].y, points[1].y)) });
+                        ImGui::SetWindowSize({ static_cast<float>(std::max(points[0].x, points[1].x) - std::min(points[0].x, points[1].x)), static_cast<float>(std::max(points[0].y, points[1].y) - std::min(points[0].y, points[1].y)) });
                         points = {};
                     }
                 }
@@ -210,7 +210,7 @@ void Gui::regionSetter(Region& region, bool& shouldRender) const
             region.min.y = ImGui::GetWindowPos().y;
             region.max.x = ImGui::GetWindowPos().x + ImGui::GetWindowSize().x;
             region.max.y = ImGui::GetWindowPos().y + ImGui::GetWindowSize().y;
-            id = static_cast<int>(sizeof(region) + region.min.x + region.min.y + region.max.x + region.max.y);
+            id = sizeof(region) + region.min.x + region.min.y + region.max.x + region.max.y;
             prevId = id;
             shouldRender = false;
         }
@@ -234,7 +234,7 @@ void Gui::helpMarker(const char* desc) const
 
 std::pair<bool, bool> Gui::shouldRender() const
 {
-    static bool shouldRenderMainUI{}, shouldRenderInfoUI{};
+    static bool shouldRenderMainUI{}, shouldRenderInfoUI = Config::getInstance().getConfig().showInfoUI;
     static bool shouldRenderMainUIOnNextFocus{}, shouldRenderInfoUIOnNextFocus{};
 
     if (GetForegroundWindow() == Roblox::getInstance().getRobloxHWnd() || GetForegroundWindow() == hWnd_)
@@ -257,6 +257,8 @@ std::pair<bool, bool> Gui::shouldRender() const
             shouldRenderInfoUIOnNextFocus = false;
             shouldRenderInfoUI = true;
         }
+        if (Config::getInstance().getConfig().showInfoUI)
+            shouldRenderInfoUI = true;
     }
     else
     {
@@ -324,7 +326,7 @@ void Gui::renderMainUI() const
     positionSetter(Config::getInstance().getPositions().sellButtonPosition, setSellButtonPosition);
 
     ImGui::SetNextWindowSize({ 580, 380 }, ImGuiCond_Once);
-    ImGui::Begin("Fisch Macro v0.2.0 (insert to show/hide)", &fisch::isRunning);
+    if (ImGui::Begin("Fisch Macro v0.3.0 (insert to show/hide)", &fisch::isRunning))
     {
         static int page{};
         ImGui::BeginChild("side bar", ImVec2(100, 0), true);
@@ -364,9 +366,8 @@ void Gui::renderMainUI() const
 
                     if (!Config::getInstance().getConfig().autoShake) ImGui::BeginDisabled();
                     {
-
                         ImGui::SetNextItemWidth(100);
-                        ImGui::InputInt("Fail Safe Count", &Config::getInstance().getConfig().failSafeThreshold);
+                        ImGui::InputInt("Fail Safe Threshold", &Config::getInstance().getConfig().failSafeThreshold);
                         ImGui::SameLine(); helpMarker("Threshold for fail safe count.\nMacro will restart if the threshold is reached.\n\nFail safe count increases if no shake button/bar/line is found, with a 1 second cooldown.");
 
                         ImGui::NewLine();
@@ -378,7 +379,11 @@ void Gui::renderMainUI() const
                         ImGui::NewLine();
 
                         ImGui::Checkbox("Auto Enable Camera Mode", &Config::getInstance().getConfig().autoEnableCameraMode);
-                        ImGui::Checkbox("Auto Blur", &Config::getInstance().getConfig().autoBlur);
+                        if (!Config::getInstance().getConfig().autoEnableCameraMode) { ImGui::BeginDisabled(); Config::getInstance().getConfig().autoBlur = false; }
+                        {
+                            ImGui::Checkbox("Auto Blur", &Config::getInstance().getConfig().autoBlur);
+                        }
+                        if (!Config::getInstance().getConfig().autoEnableCameraMode) ImGui::EndDisabled();
                         ImGui::Checkbox("Auto Look Down", &Config::getInstance().getConfig().autoLookDown);
                         ImGui::Checkbox("Auto Zoom In", &Config::getInstance().getConfig().autoZoomIn);
 
@@ -476,30 +481,23 @@ void Gui::renderMainUI() const
                 ImGui::Separator();
                 {
                     ImGui::Checkbox("Show Info UI", &Config::getInstance().getConfig().showInfoUI);
-                    // TODO : add checkboxes for what to show
+                    ImGui::Checkbox("Show Run Time", &Config::getInstance().getConfig().showRunTime);
+                    ImGui::Checkbox("Show Fail Safe Count", &Config::getInstance().getConfig().showFailSafeCount);
+                    ImGui::Checkbox("Show Bar Minigame Hold Duration", &Config::getInstance().getConfig().showBarMinigameHoldDuration);
                 }
 
                 break;
-                //case 2:
-                //    static int index = std::find(config.data.configsString.begin(), config.data.configsString.end(), config.data.configTXTname) != config.data.configsString.end()
-                //        ? static_cast<int>(std::distance(config.data.configsString.begin(), std::find(config.data.configsString.begin(), config.data.configsString.end(), config.data.configTXTname)))
-                //        : 0;
-                //    static int prevIndex = index;
-                //    ImGui::SetNextItemWidth(ImGui::GetWindowWidth() - 15);
-                //    ImGui::ListBox("", &index, config.data.configsCString.get(), static_cast<int>(config.data.configsString.size()));
-                //    if (index != prevIndex)
-                //    {
-                //        prevIndex = index;
-                //        config.data.configTXTname = config.data.configsString[index];
-                //    }
+            case 2:
+                auto [size, configs] = Config::getInstance().getConfigs();
+                int& index = Config::getInstance().getSelectedConfigIndex();
+                ImGui::SetNextItemWidth(ImGui::GetWindowWidth() - 15);
+                ImGui::ListBox("", &index, configs, size);
 
-                //    if (ImGui::Button("Refresh")) config.loadData();
-                //    ImGui::SameLine();
-                //    if (ImGui::Button("Load")) config.loadConfig();
-                //    ImGui::SameLine();
-                //    if (ImGui::Button("Save")) config.saveConfig();
+                if (ImGui::Button("Load")) Config::getInstance().userLoad();
+                ImGui::SameLine();
+                if (ImGui::Button("Save")) Config::getInstance().userSave();
 
-                //    break;
+                break;
             }
         }
         ImGui::EndChild();
@@ -509,4 +507,11 @@ void Gui::renderMainUI() const
 
 void Gui::renderInfoUI() const
 {
+    if (ImGui::Begin("Info UI"))
+    {
+        if (Config::getInstance().getConfig().showRunTime) ImGui::Text("Run Time: %d : %d : %d", fisch::runTimeHours, fisch::runTimeMinutes, fisch::runTimeSeconds);
+        if (Config::getInstance().getConfig().showFailSafeCount) ImGui::Text("Fail Safe Count: %d", fisch::failSafeCount);
+        if (Config::getInstance().getConfig().showBarMinigameHoldDuration) ImGui::Text("Bar Minigame Hold Duration: %d", fisch::output);
+    }
+    ImGui::End();
 }

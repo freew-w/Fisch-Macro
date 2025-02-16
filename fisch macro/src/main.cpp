@@ -4,21 +4,21 @@
 #include "gui.h"
 #include "input.h"
 
-//int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
-int main()
+int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
+//int main()
 {
+    SetForegroundWindow(Roblox::getInstance().getRobloxHWnd());
+
     std::thread renderingThread([]()
         {
             try
             {
                 while (fisch::isRunning)
-                {
                     Gui::getInstance().renderFrame();
-                }
             }
             catch (const std::exception& e)
             {
-                std::cout << e.what() << std::endl;
+                MessageBoxA(nullptr, e.what(), "Error", MB_ICONERROR);
                 exit(EXIT_FAILURE);
             }
         });
@@ -26,7 +26,7 @@ int main()
     try
     {
         bool firstRun = true;
-        bool newRun = true;
+        auto lastLoopTime = std::chrono::steady_clock::now();
 
         while (fisch::isRunning)
         {
@@ -36,8 +36,25 @@ int main()
             if (!fisch::enabled)
             {
                 firstRun = true;
-                newRun = true;
+                fisch::failSafe(true);
                 continue;
+            }
+
+            auto currentTime = std::chrono::steady_clock::now();
+            if (std::chrono::duration_cast<std::chrono::seconds>(currentTime - lastLoopTime).count() >= 1)
+            {
+                lastLoopTime = currentTime;
+                fisch::runTimeSeconds++;
+                if (fisch::runTimeSeconds >= 59)
+                {
+                    fisch::runTimeSeconds = 0;
+                    fisch::runTimeMinutes++;
+                }
+                if (fisch::runTimeMinutes >= 59)
+                {
+                    fisch::runTimeMinutes = 0;
+                    fisch::runTimeHours++;
+                }
             }
 
             if (firstRun)
@@ -69,9 +86,9 @@ int main()
                 if (!Config::getInstance().getConfig().autoBarMinigame)
                     continue;
 
-                if (newRun)
+                if (firstRun)
                 {
-                    newRun = false;
+                    firstRun = false;
                     if (Config::getInstance().getConfig().autoCalculateBarWidth)
                         Config::getInstance().getConfig().barWidth = fisch::getBarWidth(minigameMat);
                 }
@@ -82,7 +99,6 @@ int main()
 
             if (fisch::failSafe())
             {
-                newRun = true;
                 if (Config::getInstance().getConfig().autoSell) fisch::sell();
                 if (Config::getInstance().getConfig().autoBlur) fisch::toggleCameraBlur();
                 if (Config::getInstance().getConfig().autoLookDown) fisch::lookDown();
@@ -92,9 +108,10 @@ int main()
     }
     catch (const std::exception& e)
     {
-        std::cout << e.what() << std::endl;
+        MessageBoxA(nullptr, e.what(), "Error", MB_ICONERROR);
         exit(EXIT_FAILURE);
     }
 
-    renderingThread.join();
+    if (renderingThread.joinable())
+        renderingThread.join();
 }

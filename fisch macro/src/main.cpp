@@ -18,7 +18,8 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLi
             }
             catch (const std::exception& e)
             {
-                MessageBoxA(nullptr, e.what(), "Error", MB_ICONERROR);
+                Gui::getInstance().hideWindow();
+                MessageBoxA(nullptr, e.what(), "Error", MB_ICONERROR | MB_TOPMOST);
                 exit(EXIT_FAILURE);
             }
         });
@@ -108,7 +109,8 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLi
     }
     catch (const std::exception& e)
     {
-        MessageBoxA(nullptr, e.what(), "Error", MB_ICONERROR);
+        Gui::getInstance().hideWindow();
+        MessageBoxA(nullptr, e.what(), "Error", MB_ICONERROR | MB_TOPMOST);
         exit(EXIT_FAILURE);
     }
 

@@ -8,12 +8,37 @@ void Gui::renderFrame()
 {
     auto [shouldRenderMainUI, shouldRenderInfoUI] = shouldRender();
 
+    if (shouldRenderMainUI)
+    {
+        POINT robloxWindowPosition = Roblox::getInstance().getRobloxWindowPosition(),
+            robloxWindowSize = Roblox::getInstance().getRobloxWindowSize();
+
+        SetWindowLongPtrW(hWnd_, GWL_EXSTYLE, GetWindowLongPtr(hWnd_, GWL_EXSTYLE) & ~WS_EX_TRANSPARENT);
+        SetWindowPos(hWnd_, HWND_TOPMOST, robloxWindowPosition.x, robloxWindowPosition.y, robloxWindowSize.x, robloxWindowSize.y, SWP_SHOWWINDOW);
+    }
+    else if (shouldRenderInfoUI)
+    {
+        POINT robloxWindowPosition = Roblox::getInstance().getRobloxWindowPosition(),
+            robloxWindowSize = Roblox::getInstance().getRobloxWindowSize();
+
+        SetWindowLongPtrW(hWnd_, GWL_EXSTYLE, GetWindowLongPtr(hWnd_, GWL_EXSTYLE) | WS_EX_TRANSPARENT);
+        SetWindowPos(hWnd_, HWND_TOPMOST, robloxWindowPosition.x, robloxWindowPosition.y, robloxWindowSize.x, robloxWindowSize.y, SWP_SHOWWINDOW);
+    }
+    else
+        SetWindowLongPtrW(hWnd_, GWL_EXSTYLE, GetWindowLongPtr(hWnd_, GWL_EXSTYLE) | WS_EX_TRANSPARENT);
+
     beginRendering();
     if (shouldRenderMainUI)
         renderMainUI();
     if (shouldRenderInfoUI && Config::getInstance().getConfig().showInfoUI)
         renderInfoUI();
     endRendering();
+}
+
+void Gui::hideWindow()
+{
+    if (hWnd_)
+        SetWindowPos(hWnd_, HWND_NOTOPMOST, 0, 0, 0, 0, 0);
 }
 
 Gui::Gui()
@@ -269,16 +294,6 @@ std::pair<bool, bool> Gui::shouldRender() const
         shouldRenderMainUI = false;
         shouldRenderInfoUI = false;
     }
-    if (shouldRenderMainUI)
-    {
-        POINT robloxWindowPosition = Roblox::getInstance().getRobloxWindowPosition(),
-            robloxWindowSize = Roblox::getInstance().getRobloxWindowSize();
-
-        SetWindowLongPtrW(hWnd_, GWL_EXSTYLE, GetWindowLongPtr(hWnd_, GWL_EXSTYLE) & ~WS_EX_TRANSPARENT);
-        SetWindowPos(hWnd_, HWND_TOPMOST, robloxWindowPosition.x, robloxWindowPosition.y, robloxWindowSize.x, robloxWindowSize.y, SWP_SHOWWINDOW);
-    }
-    else
-        SetWindowLongPtrW(hWnd_, GWL_EXSTYLE, GetWindowLongPtr(hWnd_, GWL_EXSTYLE) | WS_EX_TRANSPARENT);
 
     return { shouldRenderMainUI, shouldRenderInfoUI };
 }
@@ -326,7 +341,7 @@ void Gui::renderMainUI() const
     positionSetter(Config::getInstance().getPositions().sellButtonPosition, setSellButtonPosition);
 
     ImGui::SetNextWindowSize({ 580, 380 }, ImGuiCond_Once);
-    if (ImGui::Begin("Fisch Macro v0.3.0 (insert to show/hide)", &fisch::isRunning))
+    if (ImGui::Begin("Fisch Macro v0.3.1 (insert to show/hide)", &fisch::isRunning))
     {
         static int page{};
         ImGui::BeginChild("side bar", ImVec2(100, 0), true);

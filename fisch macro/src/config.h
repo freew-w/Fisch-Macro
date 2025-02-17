@@ -60,7 +60,7 @@ public:
     inline const Positions& getPositions() const { return positions_; }
     inline Options& getConfig() { return config_; }
     inline const Options& getConfig() const { return config_; }
-    std::pair<int, const char**> getConfigs();
+    std::pair<const int, const char* const* const> getConfigs();
     int& getSelectedConfigIndex();
 
     bool userSave();

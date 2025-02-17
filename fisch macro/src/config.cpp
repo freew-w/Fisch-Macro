@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "config.h"
 
-std::pair<int, const char**> Config::getConfigs()
+std::pair<const int, const char* const* const> Config::getConfigs()
 {
     if (!configs_.empty())
         configs_.clear();
@@ -59,35 +59,38 @@ bool Config::userLoad()
 Config::Config()
 {
     if (!validateFiles())
-        throw std::runtime_error("Failed to validate files");
+        MessageBoxW(nullptr, L"Failed to validate files", L"Warning", MB_ICONWARNING | MB_TOPMOST);
     if (!loadData())
-        throw std::runtime_error("Failed to load data");
+        MessageBoxW(nullptr, L"Failed to load data", L"Warning", MB_ICONWARNING | MB_TOPMOST);
     if (!loadPositions())
-        throw std::runtime_error("Failed to load positions");
+        MessageBoxW(nullptr, L"Failed to load positions", L"Warning", MB_ICONWARNING | MB_TOPMOST);
     if (!loadConfig())
-        throw std::runtime_error("Failed to load config");
+        MessageBoxW(nullptr, L"Failed to load config", L"Warning", MB_ICONWARNING | MB_TOPMOST);
 }
 
 Config::~Config()
 {
     if (!saveData())
-        throw std::runtime_error("Failed to save data");
+        MessageBoxW(nullptr, L"Failed to save data", L"Warning", MB_ICONWARNING | MB_TOPMOST);
     if (!savePositions())
-        throw std::runtime_error("Failed to save positions");
+        MessageBoxW(nullptr, L"Failed to save positions", L"Warning", MB_ICONWARNING | MB_TOPMOST);
     if (!saveConfig())
-        throw std::runtime_error("Failed to save config");
+        MessageBoxW(nullptr, L"Failed to save config", L"Warning", MB_ICONWARNING | MB_TOPMOST);
 }
 
 bool Config::validateFiles() const
 {
     bool shouldCreateData = true;
     bool shouldCreatePositions = true;
+    bool shouldCreateConfigsFolder = true;
     bool shouldCreateConfig = true;
 
     for (const auto& file : std::filesystem::directory_iterator(std::filesystem::current_path()))
     {
         if (file.path().filename() == "configs")
         {
+            shouldCreateConfigsFolder = false;
+
             for (const auto& configFile : std::filesystem::directory_iterator(configFolderPath_))
             {
                 if (configFile.is_regular_file())
@@ -106,8 +109,11 @@ bool Config::validateFiles() const
     if (shouldCreatePositions)
         if (!savePositions())
             return false;
+    if (shouldCreateConfigsFolder)
+        if (!std::filesystem::create_directory(configFolderPath_))
+            return false;
     if (shouldCreateConfig)
-        if (!std::filesystem::create_directory(configFolderPath_) || !saveConfig())
+        if (!saveConfig())
             return false;
 
     return true;

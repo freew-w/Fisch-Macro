@@ -7,6 +7,8 @@ public:
 
     void renderFrame();
 
+    void hideWindow();
+
 private:
     HWND hWnd_{};
     WNDCLASSEX wc_{};

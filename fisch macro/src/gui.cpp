@@ -341,7 +341,7 @@ void Gui::renderMainUI() const
     positionSetter(Config::getInstance().getPositions().sellButtonPosition, setSellButtonPosition);
 
     ImGui::SetNextWindowSize({ 580, 380 }, ImGuiCond_Once);
-    if (ImGui::Begin("Fisch Macro v0.3.1 (insert to show/hide)", &fisch::isRunning))
+    if (ImGui::Begin("Fisch Macro v0.3.2 (insert to show/hide)", &fisch::isRunning))
     {
         static int page{};
         ImGui::BeginChild("side bar", ImVec2(100, 0), true);
@@ -522,6 +522,7 @@ void Gui::renderMainUI() const
 
 void Gui::renderInfoUI() const
 {
+    ImGui::SetNextWindowPos({0, 0}, ImGuiCond_Once);
     if (ImGui::Begin("Info UI"))
     {
         if (Config::getInstance().getConfig().showRunTime) ImGui::Text("Run Time: %d : %d : %d", fisch::runTimeHours, fisch::runTimeMinutes, fisch::runTimeSeconds);

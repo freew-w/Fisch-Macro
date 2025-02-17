@@ -27,6 +27,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLi
     try
     {
         bool firstRun = true;
+        bool newRod = true;
         auto lastLoopTime = std::chrono::steady_clock::now();
 
         while (fisch::isRunning)
@@ -37,6 +38,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLi
             if (!fisch::enabled)
             {
                 firstRun = true;
+                newRod = true;
                 fisch::failSafe(true);
                 continue;
             }
@@ -87,9 +89,9 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLi
                 if (!Config::getInstance().getConfig().autoBarMinigame)
                     continue;
 
-                if (firstRun)
+                if (newRod)
                 {
-                    firstRun = false;
+                    newRod = false;
                     if (Config::getInstance().getConfig().autoCalculateBarWidth)
                         Config::getInstance().getConfig().barWidth = fisch::getBarWidth(minigameMat);
                 }
